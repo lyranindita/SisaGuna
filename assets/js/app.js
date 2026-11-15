@@ -96,11 +96,11 @@ function mapArt(h, pins = true, extra = '') {
 }
 
 /* ---------- SHELLS ---------- */
-function logo(white) { return `<div class="logo ${white ? 'white' : ''}" data-go="#/"><img src="assets/img/logo.svg" alt="SisaGuna"><b>Sisa<span>Guna</span></b></div>`; }
+function logo(white) { return `<div class="logo ${white ? 'white' : ''}" data-go="#/"><img src="${ASSET_IMG}logo.svg" alt="SisaGuna"><b>Sisa<span>Guna</span></b></div>`; }
 function sidebar() {
   const R = ROLES[S.role]; const here = location.hash || '#/';
   return `<aside class="sidebar">
-    <div class="logo" data-go="${R.home}"><img src="assets/img/logo.svg" alt=""><b>Sisa<span>Guna</span></b></div>
+    <div class="logo" data-go="${R.home}"><img src="${ASSET_IMG}logo.svg" alt=""><b>Sisa<span>Guna</span></b></div>
     ${S.role !== 'penghasil' ? `<div style="margin-top:8px">${pill(R.role, R.color)}</div>` : ''}
     <div style="height:14px"></div>
     <button class="btn btn-primary btn-block" data-go="${R.cta[2]}">${I(R.cta[1])}${R.cta[0]}</button>

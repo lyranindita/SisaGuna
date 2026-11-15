@@ -1,7 +1,9 @@
 /* =========================================================
    Data contoh SisaGuna (nanti bisa diganti data dari database)
    ========================================================= */
-const IMG = (k) => /^(https?:|blob:|data:)/.test(k) ? k : `assets/img/img_${k}.jpg`;
+/* lokasi gambar: 'assets/img/' (struktur folder) atau '' (semua file di satu folder, window.FLAT) */
+const ASSET_IMG = window.FLAT ? '' : 'assets/img/';
+const IMG = (k) => /^(https?:|blob:|data:)/.test(k) ? k : `${ASSET_IMG}img_${k}.jpg`;
 
 const CATS = {
   Perikanan:        { key: 'ikan',     icon: 'fish',    img: 'tulang', count: 128, desc: 'Kepala, tulang, sisik, jeroan' },
