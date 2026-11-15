@@ -205,27 +205,29 @@ V.landing = () => `
 
 /* ---------- AUTH ---------- */
 const VIA_EMAIL = () => DB.on && LOGIN_VIA === 'email';
+const OTP_MODE = () => !VIA_EMAIL() || EMAIL_MODE === 'otp';
 V.masuk = () => authShell(`
   <a class="link" data-go="#/">← Kembali ke beranda</a>
-  <div class="col gap-8"><div class="h1" style="font-size:30px">Masuk ke akunmu 👋</div><p class="muted">${VIA_EMAIL() ? 'Masukkan email usahamu. Kami akan mengirim link masuk ke email tersebut.' : 'Gunakan nomor WhatsApp yang terdaftar. Kami akan mengirim kode OTP untuk verifikasi.'}</p></div>
+  <div class="col gap-8"><div class="h1" style="font-size:30px">Masuk ke akunmu 👋</div><p class="muted">${VIA_EMAIL() ? (OTP_MODE() ? `Masukkan email usahamu. Kami akan mengirim kode OTP ${OTP_LENGTH} digit ke email tersebut.` : 'Masukkan email usahamu. Kami akan mengirim link masuk ke email tersebut.') : 'Gunakan nomor WhatsApp yang terdaftar. Kami akan mengirim kode OTP untuk verifikasi.'}</p></div>
   ${VIA_EMAIL()
     ? `<label class="field"><span class="label">Email</span><input class="input" type="email" inputmode="email" name="login" value="${esc(S.loginId || '')}" placeholder="nama@usaha.com" autocomplete="email"></label>`
     : `<label class="field"><span class="label">Nomor WhatsApp</span><input class="input" type="tel" inputmode="tel" name="login" value="${esc(S.phone)}" placeholder="Contoh: 0812 3456 7890" autocomplete="tel"></label>`}
   ${chk('Saya menyetujui Syarat & Ketentuan serta Kebijakan Privasi', true)}
-  <button class="btn btn-primary btn-block" data-send-otp>${VIA_EMAIL() ? 'Kirim Link Masuk' : 'Kirim Kode OTP'}</button>
+  <button class="btn btn-primary btn-block" data-send-otp>${OTP_MODE() ? 'Kirim Kode OTP' : 'Kirim Link Masuk'}</button>
   <div class="row"><div class="divider grow"></div><span class="t-sm faint">atau</span><div class="divider grow"></div></div>
   <button class="btn btn-outline btn-block" data-google>Masuk dengan Google</button>
-  <p class="muted" style="text-align:center">Akun baru otomatis dibuat saat pertama kali masuk.</p>`);
+  <p class="muted" style="text-align:center">Belum punya akun? Akun baru otomatis dibuat saat pertama kali masuk, lalu kamu diminta memilih peran & melengkapi data usaha.</p>`);
 
 V.otp = () => authShell(`
   <a class="link" data-go="#/masuk">← Ganti ${VIA_EMAIL() ? 'email' : 'nomor'}</a>
-  ${VIA_EMAIL()
-    ? `<div class="col" style="align-items:center;text-align:center">${ib('send', 'primary', 96)}<div class="h1" style="font-size:30px">Cek email kamu</div><p class="muted">Kami mengirim email ke <b>${esc(S.loginId) || 'kamu'}</b>. Buka email itu <b>di browser ini</b>, lalu klik <b>Sign in</b> — kamu otomatis masuk. Cek juga folder Spam.</p></div>
-       ${note('info', 'Jika email berisi kode 6 digit (bukan link), masukkan kodenya di bawah ini.')}`
-    : `<div class="col" style="align-items:center;text-align:center">${ib('shield', 'primary', 96)}<div class="h1" style="font-size:30px">Masukkan kode OTP</div><p class="muted">Kode 6 digit telah dikirim ke WhatsApp <b>${esc(S.loginId || S.phone) || 'kamu'}</b></p></div>`}
-  <div class="otp">${Array(6).fill('<input maxlength="1" inputmode="numeric" value="" autocomplete="one-time-code">').join('')}</div>
-  <p class="muted" style="text-align:center">Belum menerima kode? <a class="link" data-resend>Kirim ulang</a></p>
-  <button class="btn btn-primary btn-block" data-verify-otp>Verifikasi</button>`);
+  ${OTP_MODE()
+    ? `<div class="col" style="align-items:center;text-align:center">${ib('shield', 'primary', 96)}<div class="h1" style="font-size:30px">Masukkan kode OTP</div><p class="muted">Kode ${OTP_LENGTH} digit telah dikirim ke ${VIA_EMAIL() ? 'email' : 'WhatsApp'} <b>${esc(S.loginId || S.phone) || 'kamu'}</b>.${VIA_EMAIL() ? ' Cek juga folder Spam.' : ''}</p></div>
+       <div class="otp" style="--otp-n:${OTP_LENGTH}">${Array(OTP_LENGTH).fill('<input maxlength="1" inputmode="numeric" value="" autocomplete="one-time-code">').join('')}</div>
+       <p class="muted" style="text-align:center">Belum menerima kode? <a class="link" data-resend>Kirim ulang</a></p>
+       <button class="btn btn-primary btn-block" data-verify-otp>Verifikasi</button>
+       ${VIA_EMAIL() ? `<p class="t-sm faint" style="text-align:center">Email berisi tombol "Sign in", bukan kode? Klik saja tombol itu di email, kamu akan otomatis masuk.</p>` : ''}`
+    : `<div class="col" style="align-items:center;text-align:center">${ib('send', 'primary', 96)}<div class="h1" style="font-size:30px">Cek email kamu</div><p class="muted">Kami mengirim email ke <b>${esc(S.loginId) || 'kamu'}</b>. Buka email itu lalu klik <b>Sign in</b> — kamu otomatis masuk. Cek juga folder Spam.</p></div>
+       <p class="muted" style="text-align:center">Belum menerima email? <a class="link" data-resend>Kirim ulang</a></p>`}`);
 
 const ROLE_OPTS = [
   ['penghasil', 'Penghasil Limbah', 'kardus', 'primary', 'Pabrik, UMKM batik, TPI/nelayan, kebun & kelompok tani yang ingin menyalurkan limbah.', 'Verifikasi data usaha penghasil limbah'],
@@ -1065,11 +1067,11 @@ document.addEventListener('click', (e) => {
     if (VIA_EMAIL() && !/^\S+@\S+\.\S+$/.test(id)) { toast('Format email belum benar'); inp.focus(); return; }
     S.loginId = id; if (!VIA_EMAIL()) S.phone = id; save();
     if (!DB.on) { if (so.hasAttribute('data-send-otp')) nav('#/otp'); else toast('Kode dikirim ulang'); return; }
-    busy(so, async () => { await DB.sendOtp(id); toast(VIA_EMAIL() ? 'Email terkirim, cek inbox kamu' : 'Kode OTP terkirim'); if (so.hasAttribute('data-send-otp')) nav('#/otp'); }, 'Mengirim…'); return; }
+    busy(so, async () => { await DB.sendOtp(id); toast(OTP_MODE() ? 'Kode OTP terkirim, cek email kamu' : 'Email terkirim, cek inbox kamu'); if (so.hasAttribute('data-send-otp')) nav('#/otp'); }, 'Mengirim…'); return; }
   const vo = t.closest('[data-verify-otp]'); if (vo) { e.preventDefault();
     const code = $$('.otp input').map(i => i.value.trim()).join('');
     if (!DB.on) { nav('#/peran'); return; }
-    if (!/^\d{6}$/.test(code)) { toast('Isi 6 digit kode OTP'); return; }
+    if (!new RegExp(`^\\d{${OTP_LENGTH}}$`).test(code)) { toast(`Isi ${OTP_LENGTH} digit kode OTP`); return; }
     busy(vo, async () => { const p = await DB.verifyOtp(S.loginId, code); toast('Berhasil masuk ✓'); nav(p ? ROLES[p.role].home : '#/peran'); }, 'Memeriksa…'); return; }
   const gg = t.closest('[data-google]'); if (gg) { e.preventDefault(); if (!DB.on) { nav('#/peran'); return; } busy(gg, () => DB.google(), 'Membuka Google…'); return; }
 
@@ -1170,7 +1172,7 @@ document.addEventListener('change', (e) => {
 });
 document.addEventListener('paste', (e) => {
   const t = e.target; if (!t.closest || !t.closest('.otp')) return;
-  const d = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6); if (!d) return;
+  const d = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, OTP_LENGTH); if (!d) return;
   e.preventDefault(); $$('.otp input').forEach((i, k) => i.value = d[k] || '');
 });
 document.addEventListener('keydown', (e) => {
