@@ -145,7 +145,7 @@ const V = {};
 /* ---------- LANDING ---------- */
 V.landing = () => `
 <nav class="l-nav">${logo()}
-  <div class="links"><a data-scroll="#kategori">Kategori</a><a data-scroll="#cara-kerja">Cara Kerja</a><a data-scroll="#fitur">Fitur</a><a data-scroll="#dampak">Dampak</a></div>
+  <div class="links"><a data-scroll="#tentang">Tentang</a><a data-scroll="#kategori">Kategori</a><a data-scroll="#cara-kerja">Cara Kerja</a><a data-scroll="#fitur">Fitur</a><a data-scroll="#dampak">Dampak</a></div>
   <div class="row"><button class="btn btn-plain btn-sm" data-go="#/masuk">Masuk</button><button class="btn btn-primary btn-sm" data-go="#/masuk">Daftar Gratis</button></div></nav>
 <header class="l-hero" id="top">
   <div class="col gap-24" style="max-width:600px">
@@ -160,6 +160,35 @@ V.landing = () => `
     <div style="width:268px;margin-top:60px">${lcard(LISTINGS[1])}</div>
   </div>
 </header>
+<section class="l-sec white about" id="tentang">
+  <div class="about-wrap">
+    <figure class="about-photo">
+      <img src="${ASSET_IMG}foto-lyra.jpg" alt="Foto Lyra Anindita Ferani" width="600" height="800" loading="lazy">
+      <figcaption class="about-badge">${I('pin')}Batang, Jawa Tengah</figcaption>
+    </figure>
+    <div class="about-body">
+      <span class="eyebrow">Tentang Pengembang</span>
+      <h2>Lyra Anindita Ferani</h2>
+      <p class="about-role">Mahasiswi S1 Bisnis Digital · UIN K.H. Abdurrahman Wahid Pekalongan</p>
+      <p class="about-bio">Saya berasal dari Kabupaten Batang dan tertarik pada titik temu antara bisnis, data, dan desain. SisaGuna adalah proyek yang saya kerjakan dari riset model bisnis, perancangan UI/UX, hingga menjadi website yang bisa dipakai langsung oleh pelaku usaha di daerah saya.</p>
+      <div class="about-fields">${[['Penelitian Bisnis', 'chart'], ['Analisis Data', 'trend'], ['Desain', 'image'], ['UI/UX', 'grid']].map(([t, ic]) => `<span class="chip">${I(ic)}${t}</span>`).join('')}</div>
+      <div class="about-story">
+        <h3>Awal mula riset SisaGuna</h3>
+        <div class="about-steps">${[
+          ['Ide awal', 'Berawal dari konsep marketplace B2B untuk jasa pemulihan, refurbish, dan upcycling.'],
+          ['Fokus ke daerah sendiri', 'Ide dipersempit menjadi jasa daur ulang limbah industri di Batang–Pekalongan: perikanan, batik non-B3, kawasan industri & pabrik, serta pertanian & perkebunan.'],
+          ['Model bisnis', 'Peluang dan alur nilainya dirumuskan lewat Business Model Canvas (BMC) dan DMC.'],
+          ['Dari desain ke website', 'Antarmuka dirancang di Figma, lalu dibangun sebagai website (bukan aplikasi Android) agar lebih cepat diluncurkan dan mudah diakses mitra.']
+        ].map(([t, d], i) => `<div class="about-step"><span class="num">${i + 1}</span><div><b>${t}</b><span>${d}</span></div></div>`).join('')}</div>
+      </div>
+      <div class="about-links">
+        <a class="btn btn-primary btn-sm" href="https://lyranindita.github.io/" target="_blank" rel="noopener">${I('user')}Portofolio</a>
+        <a class="btn btn-outline btn-sm" href="https://digital-flow-space.blogspot.com/" target="_blank" rel="noopener">${I('edit')}Blog UI/UX</a>
+        <a class="btn btn-outline btn-sm" href="https://github.com/lyranindita/SisaGuna" target="_blank" rel="noopener">${I('file')}Kode di GitHub</a>
+      </div>
+    </div>
+  </div>
+</section>
 <section class="l-sec" id="kategori"><div class="head"><h2>4 Sektor Limbah Utama Batang–Pekalongan</h2><p>Setiap kategori punya alur yang menyesuaikan sifat limbahnya.</p></div>
   <div class="grid-4">${Object.entries(CATS).map(([n, c]) => `<div class="card col cat-card">${photo(c.img, c.key)}<div class="h3">${n}</div><div class="muted">${KATEGORI_DETAIL[n].d.split('.')[0]}.</div><div class="note ${c.key === 'industri' ? 'primary' : (c.key === 'batik' ? 'warning' : c.key)} t-sm">→ ${KATEGORI_DETAIL[n].olah.map(o => o[0]).join(' · ')}</div></div>`).join('')}</div></section>
 <section class="l-sec white" id="cara-kerja"><div class="head"><h2>Cara Kerja SisaGuna</h2><p>Dari limbah sampai dana cair, semua tercatat dan aman.</p></div>

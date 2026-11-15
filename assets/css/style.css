@@ -512,3 +512,45 @@ h1, h2, h3, .h1, .h2, .h3 { line-height: 1.25; }
 /* tombol status selesai (abu-abu) & ID pesanan satu baris */
 .btn-disabled, .btn-disabled:hover { background: #E3E9F1; color: #6F819B; box-shadow: none; cursor: not-allowed; }
 .table td:first-child { white-space: nowrap; }
+
+/* =========================================================
+   TENTANG PENGEMBANG (landing page)
+   ========================================================= */
+.l-sec[id], .l-hero[id] { scroll-margin-top: 90px; }
+.about-wrap { width: 100%; max-width: 1120px; display: grid; grid-template-columns: 300px 1fr; gap: 56px; align-items: start; }
+.about-photo { position: relative; margin: 0; }
+.about-photo img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 24px; background: var(--primary-light); border: 6px solid #fff; box-shadow: 0 18px 40px rgba(47, 128, 237, .18); }
+.about-badge { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; background: #fff; color: var(--text); font-size: 13px; font-weight: 700; padding: 8px 14px; border-radius: 999px; box-shadow: var(--shadow); }
+.about-badge .ic { width: 16px; height: 16px; color: var(--primary); }
+.about-body { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.about-body .eyebrow { font-size: 13px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--primary); }
+.about-body h2 { font-size: 36px; font-weight: 800; line-height: 1.15; letter-spacing: -.01em; }
+.about-role { font-size: 16px; font-weight: 700; color: var(--text-2); }
+.about-bio { font-size: 16px; line-height: 1.7; color: var(--text-2); max-width: 720px; }
+.about-fields { display: flex; flex-wrap: wrap; gap: 8px; }
+.about-fields .chip { cursor: default; }
+.about-fields .chip .ic { width: 16px; height: 16px; color: var(--primary); }
+.about-story { margin-top: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+.about-story h3 { font-size: 18px; font-weight: 800; }
+.about-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; }
+.about-step { display: flex; gap: 12px; align-items: flex-start; }
+.about-step .num { flex: none; width: 32px; height: 32px; border-radius: 10px; background: var(--primary); color: #fff; font-weight: 800; font-size: 14px; display: grid; place-items: center; }
+.about-step b { display: block; font-size: 15px; font-weight: 800; margin-bottom: 4px; }
+.about-step span { font-size: 14px; line-height: 1.6; color: var(--text-2); }
+.about-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+@media (max-width: 900px) {
+  .about-wrap { grid-template-columns: 1fr; gap: 32px; }
+  .about-photo { width: 100%; max-width: 280px; margin: 0 auto; }
+  .about-body { text-align: left; }
+  .about-steps { grid-template-columns: 1fr; }
+  .about-body h2 { font-size: 30px; }
+}
+
+/* hero landing di layar HP: kartu contoh tidak melebihi layar */
+@media (max-width: 760px) {
+  .l-hero { flex-direction: column; padding: 48px 20px 56px; gap: 32px; }
+  .l-hero h1 { font-size: 38px; }
+  .l-hero > .row.grow { flex-direction: column; align-items: stretch; width: 100%; }
+  .l-hero > .row.grow > div { width: 100% !important; margin-top: 0 !important; }
+  .l-sec { padding: 56px 20px; }
+}
