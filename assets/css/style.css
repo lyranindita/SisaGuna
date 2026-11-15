@@ -554,3 +554,8 @@ h1, h2, h3, .h1, .h2, .h3 { line-height: 1.25; }
   .l-hero > .row.grow > div { width: 100% !important; margin-top: 0 !important; }
   .l-sec { padding: 56px 20px; }
 }
+@media (max-width: 760px) {
+  .l-foot { flex-wrap: wrap; padding: 40px 20px; gap: 28px; }
+  .l-foot > .col { min-width: 140px; }
+  .l-cta { flex-direction: column; align-items: flex-start; gap: 16px; margin: 0 20px 56px; padding: 28px 24px; }
+}
