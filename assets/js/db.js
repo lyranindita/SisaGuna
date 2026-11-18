@@ -85,7 +85,8 @@ const DB = {
   fromRow(r) {
     return { nama: r.nama, nib: r.nib || '', wa: r.whatsapp || '', email: r.email || '', kec: r.kecamatan || '', alamat: r.alamat || '',
       usaha: r.jenis_usaha || '', olah: r.jenis_olahan || '', kategori: r.kategori || [], kapasitas: r.kapasitas || '',
-      plat: r.plat || '', armada: r.armada || '', pendingin: !!r.pendingin, wilayah: r.wilayah || [], verified: !!r.terverifikasi };
+      plat: r.plat || '', armada: r.armada || '', pendingin: !!r.pendingin, wilayah: r.wilayah || [], verified: !!r.terverifikasi,
+      verifStatus: r.verif_status || (r.terverifikasi ? 'disetujui' : 'belum'), verifCatatan: r.verif_catatan || '', isAdmin: !!r.is_admin };
   },
   toRow(role, d) {
     const map = { nama: 'nama', nib: 'nib', wa: 'whatsapp', email: 'email', kec: 'kecamatan', alamat: 'alamat', usaha: 'jenis_usaha', olah: 'jenis_olahan',
@@ -102,11 +103,13 @@ const DB = {
     if (data) { S.role = data.role; S.prof[data.role] = this.fromRow(data); if (data.whatsapp) S.phone = data.whatsapp; save(); }
     return data;
   },
-  async saveProfile(role, d, file) {
+  async saveProfile(role, d, file, ocr) {
     const row = this.toRow(role, d); row.id = this.user.id;
     if (!row.email && this.user.email) row.email = this.user.email;
     if (file) row.dokumen_path = await this.upload('dokumen', file);
-    const { data, error } = await this.sb.from('profiles').upsert(row).select().single();
+    if (ocr) row.ocr = ocr;
+    let { data, error } = await this.sb.from('profiles').upsert(row).select().single();
+    if (error && row.ocr && /ocr/.test(error.message || '')) { delete row.ocr; ({ data, error } = await this.sb.from('profiles').upsert(row).select().single()); } // update-2 belum dijalankan
     if (error) throw error;
     this.profile = data; S.role = data.role; S.prof[data.role] = this.fromRow(data); save();
     return data;
@@ -214,6 +217,62 @@ const DB = {
   async updatePickup(id, patch) {
     const { error } = await this.sb.from('pickup_requests').update(patch).eq('id', id);
     if (error) throw error;
+  },
+
+  async pickupLocation(id, ll) {
+    const { error } = await this.sb.from('pickup_requests').update({ driver_lat: ll[0], driver_lng: ll[1], driver_at: new Date().toISOString() }).eq('id', id);
+    if (error) throw error;
+  },
+
+  /* ---------- PESANAN & JEJAK LIMBAH ---------- */
+  ORDER_SEL: '*, seller:profiles!orders_seller_id_fkey(nama, whatsapp, kecamatan, alamat), buyer:profiles!orders_buyer_id_fkey(nama, whatsapp, kecamatan, alamat), driver:profiles!orders_logistik_id_fkey(nama, whatsapp, plat, armada, kecamatan)',
+  async myOrders() {
+    const id = this.user.id;
+    const { data, error } = await this.sb.from('orders').select(this.ORDER_SEL)
+      .or(`seller_id.eq.${id},buyer_id.eq.${id},logistik_id.eq.${id}`).order('created_at', { ascending: false });
+    if (error) throw error; return data;
+  },
+  async getOrder(id) {
+    const { data, error } = await this.sb.from('orders').select(this.ORDER_SEL + ', events:order_events(*)').eq('id', id).maybeSingle();
+    if (error) throw error;
+    if (data) data.events = (data.events || []).sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+    return data;
+  },
+  async openOrders() {
+    const { data, error } = await this.sb.from('orders').select(this.ORDER_SEL)
+      .eq('status', 'dibayar').eq('metode_jemput', 'Mitra Logistik').is('logistik_id', null).order('created_at', { ascending: true });
+    if (error) throw error; return data;
+  },
+  async updateOrder(id, patch) {
+    const { data, error } = await this.sb.from('orders').update(patch).eq('id', id).select('id');
+    if (error) throw error;
+    if (!data || !data.length) throw new Error('Pesanan tidak bisa diperbarui (mungkin sudah diambil mitra lain)');
+  },
+  async takeOrder(id) {
+    const { data, error } = await this.sb.from('orders').update({ logistik_id: this.user.id, status: 'dijemput' })
+      .eq('id', id).is('logistik_id', null).select('id');
+    if (error) throw error; return data && data.length > 0;
+  },
+  async orderLocation(id, ll) {
+    const { error } = await this.sb.from('orders').update({ driver_lat: ll[0], driver_lng: ll[1], driver_at: new Date().toISOString() }).eq('id', id);
+    if (error) throw error;
+  },
+
+  /* ---------- ADMIN VERIFIKASI ---------- */
+  async verifQueue(status) {
+    const { data, error } = await this.sb.from('profiles')
+      .select('id, role, nama, nib, email, whatsapp, kecamatan, alamat, jenis_usaha, jenis_olahan, plat, armada, dokumen_path, verif_status, verif_catatan, verif_at, ocr, created_at')
+      .eq('verif_status', status).order('created_at', { ascending: true });
+    if (error) throw error; return data;
+  },
+  async docUrl(path) {
+    const { data, error } = await this.sb.storage.from('dokumen').createSignedUrl(path, 600);
+    if (error) throw error; return data.signedUrl;
+  },
+  async setVerif(id, status, catatan) {
+    const { data, error } = await this.sb.from('profiles').update({ verif_status: status, verif_catatan: catatan || null }).eq('id', id).select('id');
+    if (error) throw error;
+    if (!data || !data.length) throw new Error('Akses admin ditolak. Pastikan is_admin = true untuk akunmu');
   },
 
   /* ---------- NOTIFIKASI ---------- */

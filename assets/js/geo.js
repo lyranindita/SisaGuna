@@ -112,12 +112,14 @@ const MAP_INIT = {
     const m = baseMap(el, a, 13);
     L.marker(a, { icon: pinIcon(el.dataset.fromColor || 'ikan', el.dataset.fromIcon || 'fish') }).addTo(m).bindPopup(el.dataset.fromLabel || 'Titik jemput');
     L.marker(b, { icon: pinIcon(el.dataset.toColor || 'tani', el.dataset.toIcon || 'recycle') }).addTo(m).bindPopup(el.dataset.toLabel || 'Tujuan');
-    m.fitBounds(L.latLngBounds([a, b]).pad(0.35));
+    const drv = el.dataset.driver ? el.dataset.driver.split(',').map(Number) : null;
+    if (drv) setDriverMarker(el, drv);
+    m.fitBounds(L.latLngBounds(drv ? [a, b, drv] : [a, b]).pad(0.35));
     const r = await getRoute(a, b); if (!el.isConnected) return;
     el._route = r;
     L.polyline(r.pts, { color: '#2F80ED', weight: 5, opacity: .85, dashArray: r.straight ? '8 8' : null }).addTo(m);
     if (el.dataset.t != null && el.dataset.t !== '') el._truck = L.marker(pointAlong(r.pts, +el.dataset.t), { icon: pinIcon('primary', 'truck', 42), zIndexOffset: 500 }).addTo(m).bindPopup('Posisi armada');
-    m.fitBounds(L.latLngBounds(r.pts).pad(0.2));
+    m.fitBounds(L.latLngBounds(el._truck ? [...r.pts, el._truck.getLatLng()] : r.pts).pad(0.2));
     const eta = el.dataset.eta && $(el.dataset.eta); if (eta) eta.textContent = `${fmtKm(r.km)} · ± ${Math.max(1, Math.round(r.min * (1 - (+el.dataset.t || 0))))} menit${r.straight ? ' (perkiraan)' : ''}`;
     if (el.dataset.gmaps) { const g = $(el.dataset.gmaps); if (g) g.href = `https://www.google.com/maps/dir/?api=1&origin=${a.join(',')}&destination=${b.join(',')}&travelmode=driving`; }
   }

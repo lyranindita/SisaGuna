@@ -24,6 +24,14 @@ Ikuti langkah di bawah (± 15 menit) supaya data tersimpan sungguhan dan bisa di
 Jalankan juga file **`supabase/update-1-peta-jemput.sql`** di SQL Editor (New query → tempel → Run).
 File ini menambah kolom lokasi listing dan tabel `pickup_requests`. Proyek baru yang menjalankan `schema.sql` terbaru tidak perlu langkah ini.
 
+### 2c. Update 2: admin verifikasi, OCR, Jejak Limbah, lokasi driver
+1. Jalankan file **`supabase/update-2-admin-jejak.sql`** di SQL Editor (New query → tempel → Run). Aman dijalankan ulang.
+2. Jadikan akunmu admin. Buka New query lagi, ganti email di bawah dengan email yang kamu pakai untuk masuk, lalu Run:
+   ```sql
+   update public.profiles set is_admin = true where email = 'emailkamu@contoh.com';
+   ```
+3. Muat ulang website. Menu **Verifikasi Mitra** muncul di sidebar akun admin.
+
 ## 3. Login lewat email (tidak perlu diatur)
 Email login memakai template bawaan Supabase, jadi **tidak ada yang perlu diubah**.
 Pengguna mengisi email, lalu menerima email **"Your sign-in link"**. Setelah link **Sign in** diklik, pengguna otomatis masuk ke SisaGuna.
@@ -73,7 +81,11 @@ Pengguna tidak bisa mengubah kolom ini sendiri.
 | Notifikasi penawaran baru (otomatis dari database) | ✅ Tersambung |
 | Titik lokasi listing (dipilih di peta saat posting) & Peta Limbah | ✅ Tersambung |
 | Jemput Cepat: buat permintaan → diambil Mitra Logistik → dimuat → selesai (+ notifikasi) | ✅ Tersambung |
-| Pesanan, jejak limbah, pembayaran rekber, ulasan, chat, dompet, dashboard dampak, tugas logistik, tender, kalender panen | 🟡 Masih data contoh. Tabelnya (`orders`, `pickups`, `reviews`, `messages`) sudah disiapkan untuk tahap berikutnya |
+| OCR dokumen verifikasi (Tesseract.js): NIB, nama usaha, nomor plat dicocokkan otomatis | ✅ Hasil disimpan di kolom `profiles.ocr` |
+| Halaman admin **Verifikasi Mitra**: lihat dokumen, setujui/tolak + catatan, notifikasi ke pendaftar | ✅ Tersambung (butuh `is_admin = true`) |
+| Pesanan & **Jejak Limbah**: bayar rekber (simulasi) → diambil logistik / jemput sendiri → timbang + foto → diterima → bukti olah | ✅ Tersambung, setiap tahap tercatat di `order_events` |
+| Lokasi driver langsung (Geolocation API) di Jejak Limbah & Jemput Cepat | ✅ Tersambung, diperbarui tiap 15 detik |
+| Ulasan, chat, dompet, dashboard dampak, tugas logistik demo, tender, kalender panen | 🟡 Masih data contoh |
 
 Saat database aktif:
 - halaman aplikasi hanya bisa dibuka setelah masuk,
@@ -84,7 +96,9 @@ Saat database aktif:
 - Pengguna hanya bisa membuat dan mengubah **profilnya sendiri**, dan tidak bisa menandai dirinya terverifikasi.
 - Listing hanya bisa diubah atau dihapus oleh **pemiliknya**. Listing aktif bisa dilihat semua orang.
 - Penawaran hanya terlihat oleh **penawar** dan **pemilik listing**. Pemilik tidak bisa menawar listingnya sendiri.
-- File diunggah ke folder milik pengguna sendiri. Dokumen verifikasi bersifat **privat**.
+- File diunggah ke folder milik pengguna sendiri. Dokumen verifikasi bersifat **privat** (hanya pemilik dan admin yang bisa membuka).
+- Hanya **admin** yang bisa mengubah status verifikasi. Pengguna tidak bisa menjadikan dirinya admin.
+- Alur status pesanan dijaga database: hanya pembeli yang membayar & mengonfirmasi, hanya pengangkut yang mengisi berat aktual dan lokasi, total harga tidak bisa diubah.
 
 ## Opsional: login OTP lewat WhatsApp
 WhatsApp OTP butuh layanan berbayar (Twilio, dihitung per pesan):

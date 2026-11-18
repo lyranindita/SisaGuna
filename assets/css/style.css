@@ -559,3 +559,7 @@ h1, h2, h3, .h1, .h2, .h3 { line-height: 1.25; }
   .l-foot > .col { min-width: 140px; }
   .l-cta { flex-direction: column; align-items: flex-start; gap: 16px; margin: 0 20px 56px; padding: 28px 24px; }
 }
+
+/* auth: cegah melebar di layar sempit */
+.auth > * { min-width: 0; }
+@media (max-width: 560px) { .auth-form .grid-2 { grid-template-columns: 1fr; } .auth-form { padding: 32px 16px; } }

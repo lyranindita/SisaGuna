@@ -11,6 +11,7 @@ sisaguna-web/
 ├── SUPABASE.md           ← panduan menyambungkan database
 ├── supabase/schema.sql   ← tabel, keamanan & storage (tempel di Supabase)
 ├── supabase/update-1-peta-jemput.sql ← tambahan untuk proyek yang sudah jalan
+├── supabase/update-2-admin-jejak.sql ← admin verifikasi, OCR, Jejak Limbah, lokasi driver
 └── assets/
     ├── css/style.css     ← semua desain (warna, tombol, kartu, layout)
     ├── js/icons.js       ← ikon SVG
@@ -50,7 +51,13 @@ Awalnya kosong ("Belum ada penjemputan aktif"). Pengguna mengisi jenis limbah, b
 - **Mode demo:** armada otomatis "ditemukan" dalam beberapa detik, lalu statusnya berjalan sendiri.
 - **Mode database:** permintaan muncul di **Order Tersedia** milik Mitra Logistik. Logistik bisa **Ambil Order → Limbah Sudah Dimuat → Selesai Diantar**, dan pemohon mendapat notifikasi di setiap tahap.
 
-## 4c. Database
+## 4c. Verifikasi, Jejak Limbah & lokasi driver
+- **OCR dokumen:** saat foto NIB/izin/STNK diunggah di form verifikasi, teksnya dibaca otomatis (Tesseract.js) lalu dicocokkan dengan NIB, nama usaha, atau nomor plat yang diisi.
+- **Verifikasi Mitra (admin):** admin membuka dokumen, melihat hasil OCR, lalu menyetujui atau menolak dengan catatan. Di mode demo halaman ini berisi contoh.
+- **Jejak Limbah (mode database):** pesanan berjalan dari bayar rekber (simulasi) → dijemput → ditimbang & difoto → diterima → bukti pengolahan. Setiap tahap tercatat dan memberi notifikasi.
+- **Lokasi driver:** pengangkut menekan **Bagikan Lokasi Langsung**; posisinya tampil di peta pemesan dan diperbarui tiap 15 detik selama halaman terbuka.
+
+## 4d. Database
 Website bisa langsung dicoba tanpa database (mode demo). Untuk menyimpan data sungguhan (akun, verifikasi, listing, foto, penawaran), ikuti **SUPABASE.md**.
 
 ## 5. Deploy gratis

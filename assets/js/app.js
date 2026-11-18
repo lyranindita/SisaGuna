@@ -104,10 +104,22 @@ function sidebar() {
     ${S.role !== 'penghasil' ? `<div style="margin-top:8px">${pill(R.role, R.color)}</div>` : ''}
     <div style="height:14px"></div>
     <button class="btn btn-primary btn-block" data-go="${R.cta[2]}">${I(R.cta[1])}${R.cta[0]}</button>
-    ${R.menu.map(([g, items]) => `<div class="nav-group">${g}</div>` + items.map(([l, ic, go, badge]) =>
+    ${sideMenu(R).map(([g, items]) => `<div class="nav-group">${g}</div>` + items.map(([l, ic, go, badge]) =>
       `<div class="nav-item ${here === go ? 'active' : ''} ${l === 'Keluar' ? 'danger' : ''}" data-go="${go}">${I(ic)}<span>${l}</span>${badge ? `<span class="badge">${badge}</span>` : ''}</div>`).join('')).join('')}
-    <div class="user-card"><div class="avatar ib-${R.color}">${me().ini}</div><div class="grow"><div class="b7 t-md ellipsis">${esc(me().nama)}</div><div class="t-xs muted">${R.role}</div></div></div>
+    <div class="user-card"><div class="avatar ib-${R.color}">${me().ini}</div><div class="grow"><div class="b7 t-md ellipsis">${esc(me().nama)}</div><div class="t-xs muted">${R.role}${verifLabel()}</div></div></div>
   </aside>`;
+}
+/* menu: Pesanan untuk pengolah & logistik (mode database), Verifikasi Mitra untuk admin */
+function sideMenu(R) {
+  const menu = R.menu.map(([g, items]) => [g, items.slice()]);
+  if (DB.on && S.role !== 'penghasil' && !menu.some(([, it]) => it.some(x => x[2] === '#/pesanan'))) menu[0][1].push(['Pesanan', 'box', '#/pesanan']);
+  if (isAdmin()) menu[menu.length - 1][1].splice(Math.max(0, menu[menu.length - 1][1].length - 1), 0, ['Verifikasi Mitra', 'shield', '#/admin']);
+  return menu;
+}
+function verifLabel() {
+  if (!DB.on || !DB.profile) return '';
+  const v = DB.profile.verif_status || (DB.profile.terverifikasi ? 'disetujui' : 'belum');
+  return { disetujui: ' · <span class="c-tani b7">Terverifikasi ✓</span>', menunggu: ' · <span class="c-warning b7">Menunggu verifikasi</span>', ditolak: ' · <span class="c-danger b7">Verifikasi ditolak</span>' }[v] || '';
 }
 function topbar(title, sub) {
   const R = ROLES[S.role];
@@ -244,8 +256,8 @@ V.peran = () => {
 };
 
 V.verif = (who) => {
-  const P = S.prof[who] || {};
-  const upload = (t, d) => `<label class="upload">${ib('upload', 'primary')}<div class="col gap-4"><b class="c-primary">${t}</b><span class="t-sm muted">${d}</span></div><input type="file" name="dokumen" hidden data-file-label></label>`;
+  const P = S.prof[who] || {}; S.ocr = null; S.ocrText = null;
+  const upload = (t, d) => `<label class="upload">${ib('upload', 'primary')}<div class="col gap-4"><b class="c-primary">${t}</b><span class="t-sm muted">${d}</span></div><input type="file" name="dokumen" accept="image/*,application/pdf" hidden data-file-label></label><div id="ocr-box" class="col gap-8"><span class="t-xs muted">Foto dokumen (JPG/PNG) dibaca otomatis untuk mencocokkan NIB & nama usaha.</span></div>`;
   const wa = () => field('Nomor WhatsApp', 'wa', 'Contoh: 0812 3456 7890', P.wa || S.phone, 'tel');
   const actions = (go) => `<div class="grid-2"><button class="btn btn-outline" data-back>Kembali</button><button class="btn btn-primary" data-go="${go}" data-role="${who}">Kirim Verifikasi</button></div>`;
   const kec = () => dd('dd-kec', 'Kecamatan', KECAMATAN, P.kec || '', { name: 'kec', ph: 'Pilih kecamatan' });
@@ -651,7 +663,7 @@ V.lBeranda = () => { const L = me('logistik'); return appShell('Beranda Mitra Lo
     <div class="col gap-16"><div class="card col"><b class="t-lg">Jadwal hari ini</b>${[['10.00', 'TPI Klidang Lor → CV Maggot Lestari', 'Aktif', 'primary'], ['13.00', 'Kauman → Rumah Upcycle Kanoman', 'Dijadwalkan', 'warning']].map(([t, r, s, c]) => `<div class="row"><b style="background:var(--bg);border-radius:10px;padding:8px 10px" class="t-sm">${t}</b><div class="col gap-4"><b class="t-sm">${r}</b><div>${pill(s, c)}</div></div></div>`).join('')}</div>
       <div class="card col">${secHead('Pendapatan minggu ini', 'Detail', '#/l/pendapatan')}<b class="c-tani" style="font-size:22px">Rp1.240.000</b><div class="chart" style="height:90px">${[['Sen', .5], ['Sel', .7], ['Rab', .4], ['Kam', .9], ['Jum', .6], ['Sab', 1], ['Min', .2]].map(([d, v]) => `<div class="c"><span style="height:${Math.round(64 * v)}px;background:var(--${d === 'Sab' ? 'tani' : 'tani-light'})"></span><small>${d}</small></div>`).join('')}</div></div></div></div>`); };
 
-V.lOrder = () => { const tabs = ['Semua', 'Butuh Pendingin', 'Pick-up', 'Truk']; return appShell('Order Tersedia', 'Order jemput limbah di wilayah layananmu', `${DB.on ? `<div class="col gap-16" id="lj-box">${loading()}</div><div class="h3">Order contoh</div>` : ''}
+V.lOrder = () => { const tabs = ['Semua', 'Butuh Pendingin', 'Pick-up', 'Truk']; return appShell('Order Tersedia', 'Order jemput limbah di wilayah layananmu', `${DB.on ? `<div class="col gap-16" id="lo-box">${loading()}</div><div class="col gap-16" id="lj-box">${loading()}</div><div class="h3">Order contoh</div>` : ''}
   ${tabsBar('lo', tabs.map(t => [t, `${t} (${LOG_ORDERS.filter(o => o[7].includes(t)).length})`]), 'Semua', 'chips')}
   ${tabs.map(t => pane('lo', t, 'Semua', (t === 'Truk' ? note('info', 'Armadamu pick-up 1 ton. Order truk hanya bisa diambil mitra dengan truk box 4 ton.', 'warning') : '') + LOG_ORDERS.filter(o => o[7].includes(t)).map(([img, n, r, tm, fee, bd, c, , st]) => `
     <div class="card row gap-16" style="${st === 'no' ? 'opacity:.65' : ''}">${photo(img, '', 'width:72px;height:64px;border-radius:14px')}<div class="col gap-4 grow"><b class="t-lg">${n}</b><span class="t-md muted">${r}</span><div class="row gap-8">${pill(tm, 'primary')}${pill(bd, c)}</div></div>
@@ -850,7 +862,9 @@ async function tickJemput() {
   const p = list.find(x => x.id === S.jActive.id); if (!p) return;
   S.jActive = p;
   if (p.status !== before) { if (p.status === 'diambil') toast('Armada ditemukan! 🚚'); if (p.status === 'selesai') toast('Penjemputan selesai ✓'); S.jShow = p.id; return loadJemput(); }
-  const el = $('#jemput .lmap[data-map="route"]'); if (el && el._truck && el._route && p.t != null) el._truck.setLatLng(pointAlong(el._route.pts, p.t));
+  const el = $('#jemput .lmap[data-map="route"]');
+  if (el && p.driver_lat) setDriverMarker(el, [p.driver_lat, p.driver_lng]);
+  else if (el && el._truck && el._route && p.t != null) el._truck.setLatLng(pointAlong(el._route.pts, p.t));
   const eta = $('#j-eta'); if (eta && el && el._route) eta.textContent = `± ${Math.max(1, Math.round(el._route.min * (1 - (p.t || 0))))} menit lagi`;
 }
 function jemputForm() {
@@ -873,10 +887,11 @@ function jemputForm() {
 function jemputTrack(p) {
   const [st, c] = PSTAT[p.status], d = p.driver;
   const steps = [['Permintaan dibuat', p.created_at, true], ['Armada ditemukan', p.diambil_at, ['diambil', 'dijemput', 'selesai'].includes(p.status)], ['Limbah dimuat', null, ['dijemput', 'selesai'].includes(p.status)], ['Selesai diantar', null, p.status === 'selesai']];
-  const startLL = d && (d.start || (d.kecamatan ? placeLL(d.kecamatan, d.nama) : [p.lat + 0.02, p.lng + 0.02]));
+  const startLL = d && (p.driver_lat ? [p.driver_lat, p.driver_lng] : d.start || (d.kecamatan ? placeLL(d.kecamatan, d.nama) : [p.lat + 0.02, p.lng + 0.02]));
+  const drvAttr = p.driver_lat ? `data-driver="${p.driver_lat},${p.driver_lng}"` : '';
   const map = d && p.status === 'diambil'
-    ? lmap('route', 460, `data-from="${startLL.join(',')}" data-to="${p.lat},${p.lng}" data-t="${p.t != null ? p.t : 0.35}" data-from-icon="truck" data-from-color="batik" data-from-label="Posisi awal armada" data-to-icon="pin" data-to-color="ikan" data-to-label="Titik jemput" data-eta="#j-eta"`)
-    : lmap('route', 460, `data-from="${p.lat},${p.lng}" data-to="${placeLL(p.tujuan || 'maggot lestari').join(',')}" data-t="${p.status === 'dijemput' ? 0.05 : ''}" data-from-icon="pin" data-from-color="ikan" data-from-label="Titik jemput" data-to-label="${esc(p.tujuan || 'Pengolah tujuan')}"`);
+    ? lmap('route', 460, `data-from="${startLL.join(',')}" data-to="${p.lat},${p.lng}" data-t="${p.driver_lat ? '' : p.t != null ? p.t : 0.35}" ${drvAttr} data-from-icon="truck" data-from-color="batik" data-from-label="Posisi awal armada" data-to-icon="pin" data-to-color="ikan" data-to-label="Titik jemput" data-eta="#j-eta"`)
+    : lmap('route', 460, `data-from="${p.lat},${p.lng}" data-to="${placeLL(p.tujuan || 'maggot lestari').join(',')}" data-t="${p.status === 'dijemput' && !p.driver_lat ? 0.05 : ''}" ${p.status === 'dijemput' ? drvAttr : ''} data-from-icon="pin" data-from-color="ikan" data-from-label="Titik jemput" data-to-label="${esc(p.tujuan || 'Pengolah tujuan')}"`);
   return `<div class="two-col"><div class="col gap-16">${map}
       <div class="grid-4">${[['Limbah', p.limbah], ['Berat', p.berat ? p.berat + ' kg' : '—'], ['Armada', p.armada], ['Ongkos', rp(p.ongkos)]].map(([k, v]) => `<div class="card col gap-4" style="padding:12px"><span class="t-xs faint b6">${k}</span><b class="t-md">${esc(v)}</b></div>`).join('')}</div></div>
     <div class="col gap-16">${note(p.status === 'mencari' ? 'clock' : p.status === 'selesai' ? 'checkCircle' : 'truck', st + (p.status === 'diambil' ? ' · <b id="j-eta">menghitung…</b>' : ''), c === 'warning' ? 'warning' : c === 'tani' ? 'tani' : 'primary')}
@@ -898,8 +913,8 @@ async function loadLogistikJemput() {
     const card = (p, actions) => `<div class="card row gap-16" style="flex-wrap:wrap">${ib(p.armada.startsWith('Motor') ? 'zap' : 'truck', (ARMADA[p.armada] || [0, 0, 'primary'])[2], 52)}<div class="col gap-4 grow" style="min-width:220px"><b class="t-lg">${esc(p.limbah)}${p.berat ? ' · ' + esc(p.berat) + ' kg' : ''}</b><span class="t-md muted">${esc(p.alamat || '')}${p.tujuan ? ' → ' + esc(p.tujuan) : ''}</span>
         <div class="row gap-8 wrap">${pill(esc(p.waktu), 'primary')}${pill(esc(p.armada), (ARMADA[p.armada] || [0, 0, 'primary'])[2])}${p.requester ? pill('Pemohon: ' + esc(p.requester.nama), 'tani') : ''}</div></div>
         <div class="col gap-4" style="align-items:flex-end"><b class="c-tani" style="font-size:20px">${rp(p.ongkos)}</b><a class="link t-sm" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}">Rute di Google Maps</a></div>${actions}</div>`;
-    box.innerHTML = `${mine.length ? `<div class="h3">Tugas Jemput Cepat saya</div>${mine.map(p => card(p, p.status === 'diambil'
-        ? `<button class="btn btn-primary btn-sm" data-lj-act="dijemput" data-pid="${p.id}">Limbah Sudah Dimuat</button>` : `<button class="btn btn-primary btn-sm" data-lj-act="selesai" data-pid="${p.id}">Selesai Diantar</button>`)).join('')}` : ''}
+    box.innerHTML = `${mine.length ? `<div class="h3">Tugas Jemput Cepat saya</div>${mine.map(p => card(p, (p.status === 'diambil'
+        ? `<button class="btn btn-primary btn-sm" data-lj-act="dijemput" data-pid="${p.id}">Limbah Sudah Dimuat</button>` : `<button class="btn btn-primary btn-sm" data-lj-act="selesai" data-pid="${p.id}">Selesai Diantar</button>`) + `<div style="width:100%">${shareBtn('pickup', p.id)}</div>`)).join('')}` : ''}
       <div class="h3">Permintaan Jemput Cepat baru (${open.length})</div>
       ${open.length ? open.map(p => card(p, `<button class="btn btn-primary btn-sm" data-lj-act="ambil" data-pid="${p.id}">Ambil Order</button>`)).join('') : `<div class="card muted" style="padding:20px">Belum ada permintaan jemput baru. Halaman ini bisa dimuat ulang untuk mengecek.</div>`}
       <div class="divider"></div>`;
@@ -909,8 +924,11 @@ async function loadLogistikJemput() {
 function afterRender(path) {
   if (path === '/jemput-cepat') loadJemput();
   if (path === '/peta') loadPeta();
-  if (path === '/l/order') loadLogistikJemput();
+  if (path === '/l/order') { loadLogistikJemput(); loadLogistikOrders(); }
+  if (path === '/admin') loadAdmin();
   if (!DB.on) return;
+  if (path === '/pesanan') loadOrders();
+  if (path === '/jejak') loadJejak();
   if (path === '/jelajah') loadJelajah();
   if (path === '/beranda' || path === '/p/beranda') loadLatest();
   if (path === '/penawaran-masuk') loadIncoming();
@@ -934,6 +952,347 @@ function pesanError(e) {
 }
 const nav = (h) => { if (location.hash === h) render(); else location.hash = h; };
 
+
+/* =========================================================
+   FITUR LANJUTAN: OCR dokumen, admin verifikasi,
+   Pesanan & Jejak Limbah dari database, lokasi driver
+   ========================================================= */
+const kodeOrder = (o) => 'SG-' + String(o.id).slice(0, 8).toUpperCase();
+const isUuid = (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v || ''));
+const ORD_ST = {
+  menunggu_pembayaran: ['Menunggu pembayaran', 'warning'], dibayar: ['Dibayar · menunggu jemput', 'primary'], dijemput: ['Dalam penjemputan', 'primary'],
+  dikirim: ['Dalam perjalanan', 'ikan'], diterima: ['Diterima pengolah', 'tani'], selesai: ['Selesai', 'tani'], dibatalkan: ['Dibatalkan', 'danger']
+};
+const ORD_FLOW = ['menunggu_pembayaran', 'dibayar', 'dijemput', 'dikirim', 'diterima', 'selesai'];
+const jamTgl = (d) => d ? new Date(d).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+
+/* ---------- 1. OCR DOKUMEN (Tesseract.js) ---------- */
+const TESS_SRC = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+function loadScript(src) {
+  return new Promise((ok, no) => {
+    if (window.Tesseract) return ok();
+    const s = document.createElement('script'); s.src = src; s.async = true;
+    s.onload = () => ok(); s.onerror = () => { s.remove(); no(new Error('pembaca dokumen gagal dimuat, periksa koneksi')); };
+    document.head.appendChild(s);
+  });
+}
+function ocrForm() { const r = $('.auth .inner') || document; const v = (n) => (($(`input[name="${n}"]`, r) || {}).value || '').trim(); return { nib: v('nib'), nama: v('nama'), plat: v('plat') }; }
+function ocrCheck(text, f) {
+  const raw = String(text || '');
+  const norm = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+  const T = norm(raw), Tnos = T.replace(/ /g, '');
+  const nibs = [...new Set(raw.replace(/(\d)[ \t.\-]+(?=\d)/g, '$1').match(/(?<!\d)\d{13}(?!\d)/g) || [])];
+  const nibIn = String(f.nib || '').replace(/\D/g, '');
+  const tokens = norm(f.nama).split(' ').filter(w => w.length > 2 && !['CV', 'UD', 'PT', 'PAK', 'IBU'].includes(w));
+  const hit = tokens.filter(w => T.includes(w)).length;
+  const skor = tokens.length ? hit / tokens.length : null;
+  const plat = norm(f.plat).replace(/ /g, '');
+  return {
+    nib_terbaca: nibs[0] || null, nib_cocok: nibIn.length === 13 ? Tnos.includes(nibIn) : null,
+    nama_skor: skor == null ? null : Math.round(skor * 100), nama_cocok: skor == null ? null : skor >= 0.6,
+    plat_cocok: plat ? Tnos.includes(plat) : null, jumlah_karakter: raw.replace(/\s/g, '').length, waktu: new Date().toISOString()
+  };
+}
+const ocrBar = (p, t) => `<div class="card col gap-8" style="padding:14px"><div class="row between"><b class="t-md">${I('file')} ${t}</b><span class="t-sm b7 c-primary">${Math.round(p * 100)}%</span></div>${bar(Math.max(.03, p), 'primary')}</div>`;
+function ocrRows(r) {
+  if (!r) return '';
+  const row = (ok, t) => `<div class="row gap-8"><span class="icon-box" style="width:22px;height:22px;border-radius:50%;background:var(--${ok === true ? 'tani' : ok === false ? 'warning' : 'border'});color:#fff">${I(ok === true ? 'check' : 'info')}</span><span class="t-sm b6">${t}</span></div>`;
+  const out = [];
+  if (r.jumlah_karakter < 25) out.push(row(false, 'Teks hampir tidak terbaca. Gunakan foto yang lebih terang dan tegak.'));
+  if (r.nib_cocok !== null) out.push(row(r.nib_cocok, r.nib_cocok ? 'NIB pada dokumen sama dengan NIB yang diisi' : `NIB yang diisi tidak ditemukan di dokumen${r.nib_terbaca ? ' (terbaca: ' + r.nib_terbaca + ')' : ''}`));
+  else if (r.nib_terbaca) out.push(row(null, 'NIB terbaca: ' + r.nib_terbaca));
+  if (r.nama_cocok !== null) out.push(row(r.nama_cocok, r.nama_cocok ? `Nama usaha ditemukan di dokumen (${r.nama_skor}%)` : `Nama usaha belum cocok dengan dokumen (${r.nama_skor}%)`));
+  if (r.plat_cocok !== null) out.push(row(r.plat_cocok, r.plat_cocok ? 'Nomor plat ditemukan di STNK' : 'Nomor plat tidak ditemukan di dokumen'));
+  return out.join('') || row(null, 'Dokumen terbaca, tidak ada data yang bisa dicocokkan.');
+}
+const ocrResult = (r) => `<div class="card col gap-8" style="padding:14px;background:var(--bg);border:0"><b class="t-md">Hasil pemeriksaan otomatis (OCR)</b>${ocrRows(r)}<span class="t-xs muted">Hasil ini membantu admin. Keputusan verifikasi tetap diperiksa oleh admin SisaGuna.</span></div>`;
+async function runOcr(file) {
+  const box = $('#ocr-box'); if (!box) return;
+  S.ocrText = null; S.ocr = null;
+  const tok = (runOcr.tok = (runOcr.tok || 0) + 1);
+  if (!/^image\/(jpe?g|png|webp|bmp)$/i.test(file.type)) { box.innerHTML = note('info', 'File PDF tidak dibaca otomatis. Dokumen tetap terkirim dan diperiksa admin.', 'warning'); return; }
+  if (file.size > 5 * 1024 * 1024) { box.innerHTML = note('info', 'Ukuran file lebih dari 5 MB. Kecilkan dulu fotonya.', 'warning'); return; }
+  box.innerHTML = ocrBar(0, 'Menyiapkan pembaca dokumen…');
+  let worker;
+  try {
+    await loadScript(TESS_SRC);
+    const opt = { logger: (m) => { if (tok === runOcr.tok && m.status === 'recognizing text' && box.isConnected) box.innerHTML = ocrBar(m.progress || 0, 'Membaca teks dokumen…'); } };
+    try { worker = await Tesseract.createWorker('ind', 1, opt); } catch (e1) { console.warn('OCR ind gagal, pakai eng', e1); worker = await Tesseract.createWorker('eng', 1, opt); }
+    const { data } = await worker.recognize(file);
+    if (tok !== runOcr.tok || !box.isConnected) return;
+    S.ocrText = data.text || ''; S.ocr = ocrCheck(S.ocrText, ocrForm());
+    box.innerHTML = ocrResult(S.ocr);
+  } catch (e) {
+    console.error(e); if (tok === runOcr.tok && box.isConnected) box.innerHTML = note('info', 'Pemeriksaan otomatis tidak berjalan (' + esc(e.message || e) + '). Dokumen tetap bisa dikirim untuk diperiksa admin.', 'warning');
+  } finally { if (worker) worker.terminate().catch(() => {}); }
+}
+/* hitung ulang kecocokan dengan isian terbaru saat formulir dikirim */
+const ocrFinal = () => S.ocrText != null ? ocrCheck(S.ocrText, ocrForm()) : null;
+
+/* ---------- 2. HALAMAN ADMIN VERIFIKASI ---------- */
+const isAdmin = () => DB.on ? !!(DB.profile && DB.profile.is_admin) : true;
+const VSTAT = { menunggu: ['Menunggu', 'warning'], disetujui: ['Disetujui', 'tani'], ditolak: ['Ditolak', 'danger'], belum: ['Belum unggah', 'primary'] };
+S.adminTab = 'menunggu';
+S.adminDemo = [
+  { id: 'd1', role: 'penghasil', nama: 'UD Batik Sekar Jagad', nib: '9120301234567', email: 'sekarjagad@contoh.id', whatsapp: '081234500001', kecamatan: 'Pekalongan Barat', jenis_usaha: 'Batik & Konveksi', verif_status: 'menunggu', created_at: '2026-11-17T08:10:00Z', ocr: { nib_terbaca: '9120301234567', nib_cocok: true, nama_skor: 100, nama_cocok: true, jumlah_karakter: 640 }, demoImg: 'perca' },
+  { id: 'd2', role: 'pengolah', nama: 'CV Maggot Lestari', nib: '8120004455661', email: 'maggotlestari@contoh.id', whatsapp: '081234500002', kecamatan: 'Batang', jenis_olahan: 'Pakan ternak & maggot', verif_status: 'menunggu', created_at: '2026-11-17T09:30:00Z', ocr: { nib_terbaca: '8120004455611', nib_cocok: false, nama_skor: 67, nama_cocok: true, jumlah_karakter: 410 }, demoImg: 'maggot' },
+  { id: 'd3', role: 'logistik', nama: 'Darto Logistik', plat: 'G 8123 AB', email: 'darto@contoh.id', whatsapp: '081234500003', kecamatan: 'Batang', armada: 'Pick-up berpendingin', verif_status: 'menunggu', created_at: '2026-11-18T06:45:00Z', ocr: null, demoImg: 'truk' }
+];
+V.admin = () => appShell('Verifikasi Mitra', 'Periksa dokumen usaha sebelum akun ditandai terverifikasi', `
+  ${DB.on ? '' : note('info', 'Mode demo: data di bawah adalah contoh. Setelah database tersambung, daftar ini berisi pendaftar sungguhan.', 'warning')}
+  <div class="row between wrap">${tabsBar('adm', [['menunggu', 'Menunggu'], ['disetujui', 'Disetujui'], ['ditolak', 'Ditolak']], S.adminTab)}<a class="btn btn-plain btn-sm" href="https://oss.go.id" target="_blank" rel="noopener">${I('shield')}Buka OSS (cek NIB)</a></div>
+  <div class="col gap-16" id="admin-box">${loading()}</div>`);
+function adminCard(p) {
+  const R = ROLES[p.role] || ROLES.penghasil, st = VSTAT[p.verif_status] || VSTAT.belum;
+  const det = p.role === 'logistik' ? [['Plat', p.plat], ['Armada', p.armada]] : p.role === 'pengolah' ? [['NIB', p.nib], ['Jenis olahan', p.jenis_olahan]] : [['NIB', p.nib], ['Jenis usaha', p.jenis_usaha]];
+  const hasDoc = p.dokumen_path || p.demoImg;
+  return `<div class="card col gap-16"><div class="row gap-16 wrap"><div class="avatar ib-${R.color}" style="width:52px;height:52px">${initials(p.nama)}</div>
+      <div class="col gap-4 grow" style="min-width:200px"><div class="row gap-8 wrap"><b class="t-lg">${esc(p.nama)}</b>${pill(R.role, R.color)}${pill(st[0], st[1])}</div>
+        <span class="t-sm muted">${[p.email, p.whatsapp, p.kecamatan].filter(Boolean).map(esc).join(' · ') || '—'}</span><span class="t-xs faint b6">Daftar ${jamTgl(p.created_at)}${p.verif_at ? ' · diperiksa ' + jamTgl(p.verif_at) : ''}</span></div>
+      ${hasDoc ? `<button class="btn btn-secondary btn-sm" data-adm-doc="${esc(p.dokumen_path || '')}" data-demo-img="${p.demoImg || ''}">${I('file')}Lihat Dokumen</button>` : pill('Belum ada dokumen', 'warning')}</div>
+    <div class="grid-2">${det.map(([k, v]) => `<div style="background:var(--bg);border-radius:14px;padding:12px"><div class="t-xs faint b6">${k}</div><b class="t-md">${esc(v) || '—'}</b></div>`).join('')}</div>
+    ${p.ocr ? `<div class="col gap-8"><b class="t-md">Hasil OCR</b>${ocrRows(p.ocr)}</div>` : `<span class="t-sm muted">${hasDoc ? 'Dokumen berupa PDF / belum diperiksa OCR — cek manual.' : ''}</span>`}
+    ${p.verif_catatan ? `<span class="t-sm"><b>Catatan:</b> ${esc(p.verif_catatan)}</span>` : ''}
+    ${p.verif_status === 'menunggu' ? `<label class="field"><span class="label">Catatan untuk pendaftar (opsional)</span><input class="input" data-adm-note="${p.id}" placeholder="Contoh: NIB sesuai data OSS"></label>
+      <div class="row gap-8" style="justify-content:flex-end"><button class="btn btn-outline btn-sm" data-adm-set="ditolak" data-uid="${p.id}">Tolak</button><button class="btn btn-primary btn-sm" data-adm-set="disetujui" data-uid="${p.id}">${I('check')}Setujui</button></div>`
+      : `<div class="row" style="justify-content:flex-end"><button class="btn btn-plain btn-sm" data-adm-set="menunggu" data-uid="${p.id}">Periksa ulang</button></div>`}</div>`;
+}
+async function loadAdmin() {
+  const box = $('#admin-box'); if (!box) return;
+  const st = S.adminTab;
+  try {
+    const list = DB.on ? await DB.verifQueue(st) : S.adminDemo.filter(p => p.verif_status === st);
+    box.innerHTML = list.length ? list.map(adminCard).join('') : emptyBox('shield', st === 'menunggu' ? 'Tidak ada antrean verifikasi' : 'Belum ada data', st === 'menunggu' ? 'Pendaftar baru yang mengunggah dokumen akan muncul di sini.' : 'Data akan muncul setelah admin memeriksa dokumen.');
+  } catch (e) { box.innerHTML = /verif_status|is_admin|column/.test(e.message || '') ? note('info', 'Jalankan dulu file supabase/update-2-admin-jejak.sql di Supabase SQL Editor.', 'warning') : errBox(e); }
+}
+
+/* ---------- 3. PESANAN DARI DATABASE ---------- */
+const _pesananDemo = V.pesanan;
+V.pesanan = () => DB.on ? appShell('Pesanan', 'Semua transaksi limbahmu', `<div class="col gap-20" id="ord-box">${loading()}</div>`) : _pesananDemo();
+function ordParty(o) {
+  const uid = DB.user && DB.user.id;
+  if (o.seller_id === uid) return ['Pembeli', o.buyer];
+  if (o.buyer_id === uid) return ['Penjual', o.seller];
+  return ['Rute', { nama: `${(o.seller || {}).nama || '—'} → ${(o.buyer || {}).nama || '—'}` }];
+}
+function ordTodo(o) { /* apakah pesanan menunggu tindakan saya */
+  const uid = DB.user && DB.user.id, buyer = o.buyer_id === uid, carrier = o.metode_jemput === 'Jemput Sendiri' ? buyer : o.logistik_id === uid;
+  return (o.status === 'menunggu_pembayaran' && buyer) || (o.status === 'dibayar' && o.metode_jemput === 'Jemput Sendiri' && buyer)
+    || (o.status === 'dijemput' && carrier) || (['dikirim', 'diterima'].includes(o.status) && buyer);
+}
+async function loadOrders() {
+  const box = $('#ord-box'); if (!box) return;
+  try {
+    const all = await DB.myOrders(); S.ordList = all;
+    const grp = { Aktif: all.filter(o => !['selesai', 'dibatalkan'].includes(o.status)), Selesai: all.filter(o => o.status === 'selesai'), Dibatalkan: all.filter(o => o.status === 'dibatalkan') };
+    const act = S.ordTab && grp[S.ordTab] ? S.ordTab : 'Aktif';
+    const rows = (list, t) => list.length ? `<div class="card p0"><table class="table"><thead><tr><th>ID Pesanan</th><th>Limbah</th><th>Mitra</th><th>Total</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
+        ${list.map(o => { const [lbl, pt] = ordParty(o), st = ORD_ST[o.status] || [o.status, 'primary'], todo = ordTodo(o);
+          return `<tr ${t === 'Aktif' ? '' : 'style="opacity:.8"'}><td class="b7">${kodeOrder(o)}</td><td><div class="row">${photo(o.foto || (CATS[o.kategori] || CATS.Perikanan).img)}<div class="col gap-4"><b>${esc(o.judul || 'Limbah')}</b><span class="t-xs muted">${esc(o.metode_jemput)}</span></div></div></td>
+            <td class="muted"><span class="t-xs faint b6">${lbl}</span><br>${esc((pt || {}).nama || '—')}</td><td class="b8">${rp(o.total)}</td><td>${pill(st[0], st[1])}</td>
+            <td><button class="btn ${t === 'Aktif' ? (todo ? 'btn-primary' : 'btn-secondary') : 'btn-disabled'} btn-sm" data-go="#/jejak" data-order="${o.id}">${t === 'Aktif' ? (todo ? 'Proses' : 'Lihat Jejak') : 'Riwayat'}</button></td></tr>`; }).join('')}
+      </tbody></table></div>` : emptyBox('box', t === 'Aktif' ? 'Belum ada pesanan berjalan' : 'Belum ada pesanan ' + t.toLowerCase(), t === 'Aktif' ? 'Pesanan otomatis dibuat ketika penjual menerima penawaran.' : 'Pesanan akan tampil di sini.',
+        t === 'Aktif' ? `<button class="btn btn-primary" data-go="${S.role === 'penghasil' ? '#/penawaran-masuk' : S.role === 'pengolah' ? '#/jelajah' : '#/l/order'}">${S.role === 'penghasil' ? 'Lihat Penawaran Masuk' : S.role === 'pengolah' ? 'Cari Bahan Baku' : 'Lihat Order Tersedia'}</button>` : '');
+    box.innerHTML = `<div class="row between wrap">${tabsBar('ordtab', Object.keys(grp).map(k => [k, `${k} (${grp[k].length})`]), act)}<button class="btn btn-plain btn-sm" data-csv-db>${I('download')}Ekspor CSV</button></div>
+      ${Object.keys(grp).map(k => pane('ordtab', k, act, rows(grp[k], k))).join('')}`;
+  } catch (e) { box.innerHTML = /metode_jemput|judul|order_events|column|relationship/i.test(e.message || '') ? note('info', 'Jalankan dulu file supabase/update-2-admin-jejak.sql di Supabase SQL Editor, lalu muat ulang halaman.', 'warning') : errBox(e); }
+}
+
+/* ---------- 4. JEJAK LIMBAH DARI DATABASE ---------- */
+const _jejakDemo = V.jejak;
+V.jejak = () => {
+  if (!DB.on) return _jejakDemo();
+  if (!isUuid(S.curOrder)) return appShell('Jejak Limbah', 'Lacak perjalanan limbah', emptyBox('box', 'Pilih pesanan dulu', 'Buka salah satu pesanan untuk melihat jejak perjalanan limbahnya.', `<button class="btn btn-primary" data-go="#/pesanan">Ke Pesanan</button>`));
+  return appShell('Jejak Limbah', 'Memuat pesanan…', `<div id="jejak-box">${loading()}</div>`);
+};
+function ordRoles(o) {
+  const uid = DB.user && DB.user.id;
+  const buyer = o.buyer_id === uid, seller = o.seller_id === uid, log = o.logistik_id === uid;
+  return { buyer, seller, log, carrier: o.metode_jemput === 'Jemput Sendiri' ? buyer : log };
+}
+const ordFrom = (o) => o.jemput_lat ? [o.jemput_lat, o.jemput_lng] : placeLL(o.jemput_alamat || (o.seller || {}).kecamatan, o.id);
+const ordTo = (o) => { const b = o.buyer || {}; return placeLL([b.alamat, b.kecamatan, b.nama].filter(Boolean).join(' '), o.buyer_id); };
+function jejakStages(o) {
+  const ev = {}; (o.events || []).forEach(e => ev[e.tahap] = e);
+  const sendiri = o.metode_jemput === 'Jemput Sendiri';
+  const S6 = [['menunggu_pembayaran', 'Penawaran diterima', 'file', 'Pesanan dibuat'], ['dibayar', 'Dibayar ke rekber', 'wallet', 'Menunggu pembeli membayar'],
+    ['dijemput', sendiri ? 'Pembeli menuju lokasi' : 'Armada menuju lokasi', 'truck', sendiri ? 'Pembeli mengambil sendiri' : 'Menunggu mitra logistik mengambil order'],
+    ['dikirim', 'Dimuat & ditimbang', 'scale', 'Berat aktual & foto muatan dicatat saat muat'], ['diterima', 'Diterima pengolah', 'box', 'Pengolah mengonfirmasi limbah sampai'],
+    ['selesai', 'Diolah · bukti pengolahan', 'recycle', 'Pengolah mengunggah bukti pengolahan']];
+  const idx = ORD_FLOW.indexOf(o.status), batal = o.status === 'dibatalkan';
+  const doneMax = batal ? Math.max(-1, ...Object.keys(ev).map(k => ORD_FLOW.indexOf(k))) : idx;
+  const items = S6.map(([k, t, ic, hint], i) => { const e = ev[k]; const st = i <= doneMax ? 'done' : (!batal && i === doneMax + 1 ? 'now' : 'next');
+    return [t, e ? `${esc(e.catatan || '')} · ${jamTgl(e.created_at)}` : hint, st, ic]; });
+  if (batal) items.push(['Pesanan dibatalkan', ev.dibatalkan ? `${esc(ev.dibatalkan.catatan || '')} · ${jamTgl(ev.dibatalkan.created_at)}` : 'Dana rekber dikembalikan', 'cancel', 'close']);
+  return items;
+}
+function shareBtn(kind, id) {
+  const on = SHARE.watch != null && SHARE.id === id;
+  return `<div class="col gap-4" data-share-ui="${id}" data-kind="${kind}">${on ? `<button class="btn btn-outline" data-share-stop>${I('target')}Berhenti Bagikan Lokasi</button><span class="t-xs muted b6">${SHARE.sent ? 'Lokasi terkirim ' + SHARE.sent.toLocaleTimeString('id-ID') + ' · diperbarui tiap 15 detik' : 'Mencari lokasi GPS…'} · biarkan halaman ini terbuka</span>`
+    : `<button class="btn btn-secondary" data-share-start="${kind}" data-sid="${id}">${I('target')}Bagikan Lokasi Langsung</button><span class="t-xs muted">Posisimu tampil di peta pemesan selama halaman ini terbuka.</span>`}</div>`;
+}
+function ordActions(o) {
+  const R = ordRoles(o), st = o.status, ML = o.metode_jemput === 'Mitra Logistik';
+  const btn = (act, label, cls = 'btn-primary', ic = '') => `<button class="btn ${cls}" data-ord-act="${act}">${ic ? I(ic) : ''}${label}</button>`;
+  const fileIn = (name, label) => `<label class="upload" style="padding:14px">${ib('camera', 'primary', 40)}<div class="col gap-4"><b class="c-primary">${label}</b><span class="t-sm muted">JPG/PNG maks. 5 MB</span></div><input type="file" name="${name}" accept="image/*" hidden data-file-label></label>`;
+  const cancel = btn('batal', 'Batalkan Pesanan', 'btn-outline');
+  if (st === 'menunggu_pembayaran') return R.buyer ? `${note('shield', 'Dana ditahan di rekber SisaGuna dan baru diteruskan ke penjual setelah limbah diterima.', 'primary')}${btn('bayar', 'Bayar ' + rp(o.total) + ' via Rekber', 'btn-primary', 'wallet')}<span class="t-xs muted">Prototipe: pembayaran disimulasikan, tidak ada uang yang ditarik.</span>${cancel}`
+    : `${note('clock', 'Menunggu pembeli membayar ke rekber.', 'warning')}${R.seller ? cancel : ''}`;
+  if (st === 'dibayar') {
+    if (!ML) return R.buyer ? `${note('pin', 'Kamu memilih Jemput Sendiri. Tekan tombol saat berangkat ke lokasi penjual.', 'primary')}${btn('jemput', 'Mulai Jemput Sendiri', 'btn-primary', 'truck')}` : note('clock', 'Pembeli akan datang mengambil limbah sendiri.', 'warning');
+    if (S.role === 'logistik' && !o.logistik_id) return `${note('truck', 'Order ini sudah dibayar dan menunggu armada.', 'primary')}${btn('ambil', 'Ambil Order Ini', 'btn-primary', 'truck')}`;
+    return `${note('clock', 'Menunggu mitra logistik mengambil order. Halaman ini diperbarui otomatis.', 'warning')}${R.buyer ? cancel : ''}`;
+  }
+  if (st === 'dijemput') return R.carrier ? `<b class="t-lg">Timbang & foto muatan</b>${field('Berat aktual hasil timbang (kg)', 'berat_aktual', 'Contoh: 248', o.jumlah_kg || '', 'number')}${fileIn('foto_muat', 'Foto timbangan / muatan')}${btn('muat', 'Konfirmasi Muat & Berangkat', 'btn-primary', 'check')}`
+    : note('truck', (ML ? 'Armada' : 'Pembeli') + ' sedang menuju lokasi jemput.', 'primary');
+  if (st === 'dikirim') return R.buyer ? `${note('truck', 'Limbah dalam perjalanan. Konfirmasi setelah limbah sampai dan sesuai.', 'primary')}${btn('terima', 'Konfirmasi Limbah Diterima', 'btn-primary', 'checkCircle')}` : note('truck', 'Limbah dalam perjalanan ke pengolah.', 'primary');
+  if (st === 'diterima') return R.buyer ? `<b class="t-lg">Unggah bukti pengolahan</b><label class="field"><span class="label">Hasil olahan</span><textarea class="textarea" name="catatan_olah" placeholder="Contoh: diolah jadi pakan maggot batch #12"></textarea></label>${fileIn('foto_olah', 'Foto proses / hasil olahan')}${btn('olah', 'Kirim Bukti Pengolahan', 'btn-primary', 'recycle')}`
+    : note('clock', 'Menunggu pengolah mengunggah bukti pengolahan.', 'warning');
+  if (st === 'selesai') return `<button class="btn btn-disabled" disabled>${I('check')}Pesanan selesai</button><button class="btn btn-outline" data-go="#/ulasan">Beri Ulasan</button>`;
+  return note('info', 'Pesanan dibatalkan. Dana rekber dikembalikan ke pembeli.', 'warning');
+}
+function jejakView(o) {
+  const R = ordRoles(o), stg = jejakStages(o), fotos = (o.events || []).filter(e => e.foto_url);
+  const showMap = !['dibatalkan'].includes(o.status), moving = ['dijemput', 'dikirim'].includes(o.status);
+  const from = ordFrom(o), to = ordTo(o), drv = o.driver_lat ? [o.driver_lat, o.driver_lng] : null;
+  const person = (lbl, p, c, extra = '') => p ? `<div class="row"><div class="avatar ib-${c}">${initials(p.nama)}</div><div class="grow"><div class="t-xs faint b6">${lbl}</div><b class="t-md">${esc(p.nama)}</b>${extra ? `<div class="t-xs muted">${extra}</div>` : ''}</div>${waLink(p.whatsapp) ? `<a class="icon-box ib-tani" href="${waLink(p.whatsapp)}" target="_blank" rel="noopener" title="Chat WhatsApp">${I('phone')}</a>` : ''}</div>` : '';
+  return `<div class="two-col"><div class="col gap-16">
+      ${showMap ? `<div class="card col">${lmap('route', 340, `data-from="${from.join(',')}" data-to="${to.join(',')}" data-from-label="Lokasi jemput" data-from-icon="${(CATS[o.kategori] || CATS.Perikanan).icon}" data-from-color="${ck(o.kategori)}" data-to-label="${esc((o.buyer || {}).nama || 'Pengolah')}" ${drv && moving ? `data-driver="${drv.join(',')}"` : ''} data-eta="#ord-eta"`)}
+        <div class="row between wrap"><span class="t-sm muted b6">${I('map')} <span id="ord-eta">Menghitung rute…</span></span><span class="t-sm b6 ${drv && moving ? 'c-primary' : 'faint'}" id="drv-at">${drv && moving ? 'Posisi pengangkut ' + jamTgl(o.driver_at) : moving ? 'Lokasi pengangkut belum dibagikan' : ''}</span></div></div>` : ''}
+      <div class="card col gap-16"><div class="h3" style="font-size:18px">Jejak perjalanan limbah</div><div>
+        ${stg.map(([t, s, st, ic], i, a) => `<div class="tl-item"><div class="tl-dot"><div class="d" style="background:var(--${st === 'done' ? 'tani' : st === 'now' ? 'primary' : st === 'cancel' ? 'danger' : 'bg'});${st === 'next' ? 'border:1px solid var(--border)' : ''}"><span style="color:${st === 'next' ? 'var(--text-3)' : '#fff'}">${I(ic)}</span></div>${i < a.length - 1 ? `<div class="line ${st === 'done' ? 'done' : ''}"></div>` : ''}</div>
+          <div style="padding-top:8px"><b class="${st === 'next' ? 'faint' : ''} ${st === 'now' ? 'b8' : ''}">${t}</b><div class="t-md ${st === 'next' ? 'faint' : 'muted'}">${s}</div></div></div>`).join('')}</div>
+        <b>Bukti serah terima</b>${fotos.length ? `<div class="row wrap">${fotos.map(e => `<a class="col gap-4" style="align-items:center" href="${esc(e.foto_url)}" target="_blank" rel="noopener">${photo(e.foto_url, '', 'width:120px;height:96px;border-radius:14px')}<span class="t-xs b6 muted">${e.tahap === 'selesai' ? 'Hasil olahan' : 'Muatan · ' + (e.berat || '') + ' kg'}</span></a>`).join('')}</div>` : `<span class="t-sm muted">Foto timbangan dan hasil olahan akan tampil di sini.</span>`}</div></div>
+    <div class="col gap-16"><div class="card col"><div class="row">${photo(o.foto || (CATS[o.kategori] || CATS.Perikanan).img, '', 'width:48px;height:48px')}<div><div class="t-xs faint b6">${kodeOrder(o)}</div><b>${esc(o.judul || 'Limbah')}</b><div class="t-sm muted">${pill((ORD_ST[o.status] || [o.status])[0], (ORD_ST[o.status] || [0, 'primary'])[1])}</div></div></div><div class="divider"></div>
+        ${kv('Metode jemput', esc(o.metode_jemput))}${kv('Berat dipesan', o.jumlah_kg ? esc(o.jumlah_kg) + ' kg' : '—')}${kv('Berat aktual', o.berat_aktual ? esc(o.berat_aktual) + ' kg' : '—')}${kv('Harga', o.harga_per_kg ? rp(o.harga_per_kg) + '/kg' : '—')}${kv('Total rekber', rp(o.total), 1)}</div>
+      <div class="card col">${person('Penjual', o.seller, 'primary', esc(o.jemput_alamat || ''))}${person('Pembeli / pengolah', o.buyer, 'tani', esc((o.buyer || {}).kecamatan || ''))}${person('Mitra logistik', o.driver, 'batik', esc([o.driver && o.driver.armada, o.driver && o.driver.plat].filter(Boolean).join(' · ')))}</div>
+      <div class="card col" id="ord-act">${ordActions(o)}</div>
+      ${R.carrier && moving ? `<div class="card col">${shareBtn('order', o.id)}</div>` : ''}
+      <button class="btn btn-plain" data-go="#/pesanan">${I('back')}Kembali ke Pesanan</button></div></div>`;
+}
+async function loadJejak() {
+  const box = $('#jejak-box'); if (!box) return;
+  try {
+    const o = await DB.getOrder(S.curOrder);
+    if (!o) { box.innerHTML = emptyBox('box', 'Pesanan tidak ditemukan', 'Pesanan ini tidak ada atau bukan milikmu.', `<button class="btn btn-primary" data-go="#/pesanan">Ke Pesanan</button>`); return; }
+    S.jo = o; box.innerHTML = jejakView(o); initMaps(box);
+    const sub = $('.topbar .sub'); if (sub) sub.textContent = `${kodeOrder(o)} · ${o.judul || ''}`;
+    clearInterval(window._jt);
+    if (!['selesai', 'dibatalkan'].includes(o.status)) window._jt = setInterval(tickJejak, 15000);
+  } catch (e) { box.innerHTML = /column|relationship|order_events/i.test(e.message || '') ? note('info', 'Jalankan dulu file supabase/update-2-admin-jejak.sql di Supabase SQL Editor.', 'warning') : errBox(e); }
+}
+async function tickJejak() {
+  if (!$('#jejak-box') || !S.jo) return clearInterval(window._jt);
+  const o = await DB.getOrder(S.jo.id).catch(() => null); if (!o || !$('#jejak-box')) return;
+  const changed = o.status !== S.jo.status || (o.events || []).length !== (S.jo.events || []).length || o.logistik_id !== S.jo.logistik_id;
+  if (changed) { toast('Status pesanan diperbarui: ' + (ORD_ST[o.status] || [o.status])[0]); return loadJejak(); }
+  if (o.driver_lat && (o.driver_lat !== S.jo.driver_lat || o.driver_lng !== S.jo.driver_lng)) {
+    setDriverMarker($('#jejak-box .lmap[data-map="route"]'), [o.driver_lat, o.driver_lng]);
+    const at = $('#drv-at'); if (at) { at.textContent = 'Posisi pengangkut ' + jamTgl(o.driver_at); at.className = 't-sm b6 c-primary'; }
+  }
+  S.jo = o;
+}
+/* geser / buat marker truk di peta rute */
+function setDriverMarker(el, ll) {
+  if (!el || !el._map || !window.L) return;
+  if (el._truck) el._truck.setLatLng(ll);
+  else el._truck = L.marker(ll, { icon: pinIcon('primary', 'truck', 42), zIndexOffset: 500 }).addTo(el._map).bindPopup('Posisi pengangkut');
+}
+
+/* ---------- 5. BAGIKAN LOKASI DRIVER (Geolocation API) ---------- */
+const SHARE = { watch: null, id: null, kind: null, last: 0, sent: null };
+function shareUI() { $$('[data-share-ui]').forEach(el => { el.outerHTML = shareBtn(el.dataset.kind || (SHARE.kind || 'order'), el.dataset.shareUi); }); }
+function stopShare(quiet) {
+  if (SHARE.watch != null && navigator.geolocation) navigator.geolocation.clearWatch(SHARE.watch);
+  const was = SHARE.watch != null; SHARE.watch = null; SHARE.id = null; SHARE.sent = null;
+  if (was && !quiet) toast('Berbagi lokasi dihentikan');
+}
+function startShare(kind, id) {
+  if (!navigator.geolocation) { toast('Browser tidak mendukung lokasi'); return; }
+  stopShare(true); SHARE.kind = kind; SHARE.id = id; SHARE.last = 0;
+  SHARE.watch = navigator.geolocation.watchPosition((p) => {
+    if (SHARE.id !== id) return;
+    const ll = [+p.coords.latitude.toFixed(6), +p.coords.longitude.toFixed(6)];
+    setDriverMarker($('#jejak-box .lmap[data-map="route"]'), ll);
+    if (Date.now() - SHARE.last < 15000) return; SHARE.last = Date.now();
+    (kind === 'order' ? DB.orderLocation(id, ll) : DB.pickupLocation(id, ll))
+      .then(() => { SHARE.sent = new Date(); if (SHARE.id === id) shareUI(); })
+      .catch((e) => { SHARE.last = 0; toast(pesanError(e)); });
+  }, (err) => { toast(err.code === 1 ? 'Izin lokasi ditolak. Aktifkan izin lokasi di browser.' : 'Lokasi GPS belum tersedia'); stopShare(true); shareUI(); },
+  { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 });
+  shareUI(); toast('Berbagi lokasi aktif 📍');
+}
+
+/* ---------- 6. ORDER PESANAN UNTUK MITRA LOGISTIK ---------- */
+async function loadLogistikOrders() {
+  const box = $('#lo-box'); if (!box || !DB.on) return;
+  try {
+    const [open, mine] = await Promise.all([DB.openOrders(), DB.myOrders()]);
+    const tasks = mine.filter(o => o.logistik_id === DB.user.id && ['dijemput', 'dikirim'].includes(o.status));
+    const card = (o, action) => `<div class="card row gap-16" style="flex-wrap:wrap">${photo(o.foto || (CATS[o.kategori] || CATS.Perikanan).img, '', 'width:72px;height:64px;border-radius:14px')}<div class="col gap-4 grow" style="min-width:220px"><b class="t-lg">${esc(o.judul || 'Limbah')}${o.jumlah_kg ? ' · ' + esc(o.jumlah_kg) + ' kg' : ''}</b>
+        <span class="t-md muted">${esc(o.jemput_alamat || (o.seller || {}).kecamatan || 'Lokasi penjual')} → ${esc((o.buyer || {}).nama || 'Pengolah')}${(o.buyer || {}).kecamatan ? ', ' + esc(o.buyer.kecamatan) : ''}</span>
+        <div class="row gap-8 wrap">${pill(kodeOrder(o), 'primary')}${pill((ORD_ST[o.status] || [o.status])[0], (ORD_ST[o.status] || [0, 'primary'])[1])}</div></div>${action}</div>`;
+    box.innerHTML = `${tasks.length ? `<div class="h3">Tugas pesanan saya</div>${tasks.map(o => card(o, `<button class="btn btn-primary btn-sm" data-go="#/jejak" data-order="${o.id}">Buka Tugas</button>`)).join('')}` : ''}
+      <div class="h3">Pesanan rekber menunggu armada (${open.length})</div>
+      ${open.length ? open.map(o => card(o, `<button class="btn btn-primary btn-sm" data-ord-take="${o.id}">Ambil Order</button>`)).join('') : `<div class="card muted" style="padding:20px">Belum ada pesanan yang menunggu armada.</div>`}`;
+  } catch (e) { box.innerHTML = /column|metode_jemput/i.test(e.message || '') ? note('info', 'Jalankan dulu file supabase/update-2-admin-jejak.sql di Supabase SQL Editor.', 'warning') : errBox(e); }
+}
+
+/* ---------- interaksi fitur lanjutan ---------- */
+document.addEventListener('click', (e) => {
+  const t = e.target;
+  // admin
+  const at = t.closest('[data-tabset="adm"] [data-tab]'); if (at) { S.adminTab = at.dataset.tab; loadAdmin(); return; }
+  const ot = t.closest('[data-tabset="ordtab"] [data-tab]'); if (ot) { S.ordTab = ot.dataset.tab; return; }
+  const ad = t.closest('[data-adm-doc]'); if (ad) { e.preventDefault();
+    if (!DB.on) { window.open(IMG(ad.dataset.demoImg || 'manifest'), '_blank', 'noopener'); return; }
+    const w = window.open('', '_blank'); // dibuka langsung agar tidak diblokir browser
+    busy(ad, async () => { try { const url = await DB.docUrl(ad.dataset.admDoc); if (w) w.location.href = url; else location.href = url; } catch (err) { if (w) w.close(); throw err; } }, 'Membuka…'); return; }
+  const as = t.closest('[data-adm-set]'); if (as) { e.preventDefault(); const id = as.dataset.uid, st = as.dataset.admSet;
+    const noteEl = $(`[data-adm-note="${id}"]`), cat = noteEl ? noteEl.value.trim() : '';
+    if (st === 'ditolak' && !cat) { toast('Tulis alasan penolakan di kolom catatan'); noteEl && noteEl.focus(); return; }
+    const msg = st === 'disetujui' ? 'Akun disetujui & ditandai terverifikasi ✓' : st === 'ditolak' ? 'Verifikasi ditolak, pendaftar diberi tahu' : 'Dikembalikan ke antrean';
+    if (!DB.on) { const p = S.adminDemo.find(x => x.id === id); if (p) { p.verif_status = st; p.verif_catatan = cat || null; p.verif_at = st === 'menunggu' ? null : new Date().toISOString(); } toast(msg); loadAdmin(); return; }
+    busy(as, async () => { await DB.setVerif(id, st, cat); toast(msg); loadAdmin(); }); return; }
+  // pesanan & jejak
+  const oa = t.closest('[data-ord-act]'); if (oa) { e.preventDefault(); const o = S.jo; if (!o) return; const act = oa.dataset.ordAct; const root = $('#ord-act');
+    if (act === 'batal' && !confirmCancel(oa)) return;
+    busy(oa, async () => {
+      let msg;
+      if (act === 'bayar') { await DB.updateOrder(o.id, { status: 'dibayar' }); msg = 'Pembayaran masuk rekber ✓'; }
+      if (act === 'batal') { await DB.updateOrder(o.id, { status: 'dibatalkan' }); msg = 'Pesanan dibatalkan'; }
+      if (act === 'ambil') { const ok = await DB.takeOrder(o.id); if (!ok) { toast('Order sudah diambil mitra lain'); return loadJejak(); } msg = 'Order diambil! Segera menuju lokasi jemput 🚚'; }
+      if (act === 'jemput') { await DB.updateOrder(o.id, { status: 'dijemput' }); msg = 'Status: menuju lokasi jemput'; }
+      if (act === 'muat') { const b = parseFloat(String(($('input[name="berat_aktual"]', root) || {}).value || '').replace(',', '.'));
+        if (!(b > 0)) { toast('Isi berat aktual hasil timbang'); $('input[name="berat_aktual"]', root).focus(); return; }
+        const f = ($('input[name="foto_muat"]', root) || {}).files; const foto = f && f[0] ? await DB.upload('foto-limbah', f[0]) : null;
+        await DB.updateOrder(o.id, { status: 'dikirim', berat_aktual: b, foto_muat: foto }); msg = 'Muatan ' + b + ' kg tercatat ✓'; }
+      if (act === 'terima') { await DB.updateOrder(o.id, { status: 'diterima' }); msg = 'Limbah diterima ✓'; }
+      if (act === 'olah') { const ta = $('textarea[name="catatan_olah"]', root), cat = ta ? ta.value.trim() : '';
+        const f = ($('input[name="foto_olah"]', root) || {}).files;
+        if (!cat && !(f && f[0])) { toast('Isi hasil olahan atau unggah foto bukti'); ta && ta.focus(); return; }
+        const foto = f && f[0] ? await DB.upload('foto-limbah', f[0]) : null;
+        await DB.updateOrder(o.id, { status: 'selesai', foto_olah: foto, catatan_olah: cat || null }); msg = 'Bukti pengolahan terkirim · pesanan selesai ✓'; }
+      if (['terima', 'olah', 'batal'].includes(act)) stopShare(true);
+      if (msg) toast(msg); await loadJejak();
+    }); return; }
+  const tk = t.closest('[data-ord-take]'); if (tk) { e.preventDefault();
+    busy(tk, async () => { const ok = await DB.takeOrder(tk.dataset.ordTake); if (!ok) { toast('Order sudah diambil mitra lain'); return loadLogistikOrders(); }
+      toast('Order diambil! Segera menuju lokasi jemput 🚚'); S.curOrder = tk.dataset.ordTake; save(); nav('#/jejak'); }); return; }
+  if (t.closest('[data-csv-db]')) { e.preventDefault(); const tab = S.ordTab || 'Aktif';
+    const list = (S.ordList || []).filter(o => tab === 'Aktif' ? !['selesai', 'dibatalkan'].includes(o.status) : tab === 'Selesai' ? o.status === 'selesai' : o.status === 'dibatalkan');
+    downloadCSV([['ID Pesanan', 'Limbah', 'Penjual', 'Pembeli', 'Metode', 'Berat (kg)', 'Total', 'Status', 'Tanggal'], ...list.map(o => [kodeOrder(o), o.judul || '', (o.seller || {}).nama || '', (o.buyer || {}).nama || '', o.metode_jemput, o.berat_aktual || o.jumlah_kg || '', o.total || 0, (ORD_ST[o.status] || [o.status])[0], (o.created_at || '').slice(0, 10)])], `SisaGuna_Pesanan_${tab}_${new Date().toISOString().slice(0, 10)}.csv`);
+    toast('CSV diunduh ✓'); return; }
+  // lokasi driver
+  const ss = t.closest('[data-share-start]'); if (ss) { e.preventDefault(); startShare(ss.dataset.shareStart, ss.dataset.sid); return; }
+  if (t.closest('[data-share-stop]')) { e.preventDefault(); stopShare(); shareUI(); return; }
+});
+document.addEventListener('change', (e) => {
+  const t = e.target;
+  if (t.name === 'dokumen' && t.files && t.files[0] && $('#ocr-box')) runOcr(t.files[0]);
+  if (['foto_muat', 'foto_olah'].includes(t.name) && t.files && t.files[0] && t.files[0].size > 5 * 1024 * 1024) { toast('Ukuran foto lebih dari 5 MB'); t.value = ''; const b = t.closest('.upload').querySelector('b'); if (b) b.textContent = 'Pilih foto lagi'; }
+});
+
 /* =========================================================
    ROUTER
    ========================================================= */
@@ -946,7 +1305,8 @@ const ROUTES = {
   '/pesanan': ['pesanan', null, 'penghasil'], '/penawaran-masuk': ['penawaranMasuk', null, 'penghasil'], '/jejak': ['jejak'], '/bayar': ['bayar'], '/ulasan': ['ulasan'],
   '/pesan': ['pesan'], '/notifikasi': ['notifikasi'], '/dompet': ['dompet'], '/dampak': ['dampak'], '/profil': ['profil', null, 'penghasil'], '/bantuan': ['bantuan'],
   '/p/beranda': ['pBeranda', null, 'pengolah'], '/p/penawaran': ['pPenawaran', null, 'pengolah'], '/p/gudang': ['pGudang', null, 'pengolah'],
-  '/l/beranda': ['lBeranda', null, 'logistik'], '/l/order': ['lOrder', null, 'logistik'], '/l/tugas': ['lTugas', null, 'logistik'], '/l/pendapatan': ['lPendapatan', null, 'logistik']
+  '/l/beranda': ['lBeranda', null, 'logistik'], '/l/order': ['lOrder', null, 'logistik'], '/l/tugas': ['lTugas', null, 'logistik'], '/l/pendapatan': ['lPendapatan', null, 'logistik'],
+  '/admin': ['admin']
 };
 function render() {
   if (DB.on && !DB.ready) return; // tunggu koneksi database (dan token dari link email) selesai dibaca
@@ -958,9 +1318,11 @@ function render() {
     const pub = ['/', '/masuk', '/otp'];
     if (!DB.user && !pub.includes(path)) { location.hash = '#/masuk'; return; }
     if (DB.user && !DB.profile && !pub.includes(path) && path !== '/peran' && !path.startsWith('/verifikasi')) { location.hash = '#/peran'; return; }
-    if (DB.profile && r[2] && r[2] !== DB.profile.role) { toast('Halaman itu untuk peran lain'); location.hash = ROLES[DB.profile.role].home; return; }
+    if (DB.profile && r[2] && r[2] !== DB.profile.role && path !== '/pesanan') { toast('Halaman itu untuk peran lain'); location.hash = ROLES[DB.profile.role].home; return; }
+    if (path === '/admin' && !isAdmin()) { toast('Halaman admin hanya untuk akun admin'); location.hash = DB.profile ? ROLES[DB.profile.role].home : '#/'; return; }
   }
-  if (r[2] && S.role !== r[2]) { S.role = r[2]; save(); }
+  if (r[2] && S.role !== r[2] && !(DB.on && path === '/pesanan')) { S.role = r[2]; save(); }
+  if (path !== '/jejak' && path !== '/l/order') stopShare(true);
   if (path === '/l/tugas' && !render._keepStep) S.step = 1;
   render._keepStep = false;
   clearInterval(window._jt);
@@ -1057,7 +1419,7 @@ document.addEventListener('click', (e) => {
   const lj = t.closest('[data-lj-act]'); if (lj) { e.preventDefault(); const p = S.ljOpen[lj.dataset.pid], act = lj.dataset.ljAct;
     busy(lj, async () => {
       if (act === 'ambil') { const ok = await DB.takePickup(p.id); toast(ok ? 'Order diambil! Segera menuju titik jemput 🚚' : 'Order sudah diambil mitra lain'); }
-      else { await DB.updatePickup(p.id, { status: act }); toast(act === 'dijemput' ? 'Status: limbah dimuat ✓' : 'Penjemputan selesai ✓'); }
+      else { await DB.updatePickup(p.id, { status: act }); if (act === 'selesai' && SHARE.id === p.id) stopShare(true); toast(act === 'dijemput' ? 'Status: limbah dimuat ✓' : 'Penjemputan selesai ✓'); }
       loadLogistikJemput(); }); return; }
 
   // --- login
@@ -1117,8 +1479,8 @@ document.addEventListener('click', (e) => {
   // navigasi umum
   const role = t.closest('[data-role]'); if (role) { const who = role.dataset.role; const d = collect(role.closest('.inner')); if (!d.nama) { toast('Nama usaha wajib diisi'); const n = $('.inner input[name="nama"]'); n && n.focus(); return; } if (d.wa) S.phone = d.wa;
     if (DB.on) { e.preventDefault(); const fileInp = $('.inner input[name="dokumen"]'); const file = fileInp && fileInp.files[0];
-      busy(role, async () => { await DB.saveProfile(who, d, file); toast('Data verifikasi terkirim ✓'); nav(role.dataset.go); }, 'Mengirim…'); return; }
-    S.prof[who] = d; S.role = who; save(); }
+      busy(role, async () => { await DB.saveProfile(who, d, file, ocrFinal()); toast(file ? 'Data terkirim ✓ Dokumen menunggu pemeriksaan admin' : 'Data verifikasi terkirim ✓'); nav(role.dataset.go); }, 'Mengirim…'); return; }
+    d.ocr = ocrFinal(); S.prof[who] = d; S.role = who; save(); }
   const toastEl = t.closest('[data-toast]'); if (toastEl) toast(toastEl.dataset.toast);
   const after = t.closest('[data-toast-after]'); if (after) setTimeout(() => toast(after.dataset.toastAfter), 150);
   const go = t.closest('[data-go]'); if (go) { e.preventDefault(); if (location.hash === go.dataset.go) render(); else location.hash = go.dataset.go; }
