@@ -10,7 +10,7 @@
 const SUPABASE_URL = 'https://juskkwnujvexpkfnozwv.supabase.co';        // contoh: 'https://abcdefghijk.supabase.co'
 const SUPABASE_ANON_KEY = 'sb_publishable_aY_F8yNKBDcmE8Ez9MLnUw_hW38t2Cv';   // kunci "anon public" (aman dipakai di browser)
 const LOGIN_VIA = 'email';      // 'email' (gratis) atau 'whatsapp' (butuh Twilio, lihat SUPABASE.md)
-const EMAIL_MODE = 'otp';       // 'otp' = pengguna memasukkan kode dari email (butuh SMTP + template {{ .Token }}), 'link' = klik link di email
+const EMAIL_MODE = 'link';       // 'otp' = pengguna memasukkan kode dari email (butuh SMTP + template {{ .Token }}), 'link' = klik link di email
 const OTP_LENGTH = 6;           // samakan dengan "Email OTP Length" di Supabase
 
 const rp = (n) => 'Rp' + Math.round(Number(n) || 0).toLocaleString('id-ID');
