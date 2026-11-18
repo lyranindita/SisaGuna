@@ -1434,7 +1434,7 @@ document.addEventListener('click', (e) => {
     const code = $$('.otp input').map(i => i.value.trim()).join('');
     if (!DB.on) { nav('#/peran'); return; }
     if (!new RegExp(`^\\d{${OTP_LENGTH}}$`).test(code)) { toast(`Isi ${OTP_LENGTH} digit kode OTP`); return; }
-    busy(vo, async () => { const p = await DB.verifyOtp(S.loginId, code); toast('Berhasil masuk ✓'); nav(p ? ROLES[p.role].home : '#/peran'); }, 'Memeriksa…'); return; }
+    busy(vo, async () => { const p = await DB.verifyOtp(S.loginId, code); toast('Berhasil masuk ✓'); if (p) S.pickRole = p.role; nav('#/peran'); }, 'Memeriksa…'); return; }
   const gg = t.closest('[data-google]'); if (gg) { e.preventDefault(); if (!DB.on) { nav('#/peran'); return; } busy(gg, () => DB.google(), 'Membuka Google…'); return; }
 
   // --- posting limbah

@@ -53,7 +53,9 @@ const DB = {
     if (fromLink) {
       this.linkError = !this.user && errDesc ? decodeURIComponent(errDesc.replace(/\+/g, ' ')) : (!this.user ? 'Sesi tidak terbaca' : null);
       history.replaceState(null, '', location.pathname);
-      location.hash = this.user ? (this.profile ? ROLES[this.profile.role].home : '#/peran') : '#/masuk';
+      // setelah klik link: selalu isi/periksa profil dulu (data lama otomatis terisi), baru masuk dashboard
+      if (this.profile) S.pickRole = this.profile.role;
+      location.hash = this.user ? '#/peran' : '#/masuk';
     }
   },
 
