@@ -124,7 +124,7 @@ function topbar(title, sub) {
 const appShell = (title, sub, body) => `<div class="shell">${sidebar()}<div class="main-wrap">${topbar(title, sub)}<main class="content">${body}</main></div></div>`;
 function authShell(body) {
   return `<div class="auth"><aside class="auth-panel">${logo(true)}
-    <div class="col gap-20"><h2>Limbahmu,<br>bahan baku tetangga.</h2>
+    <div class="col gap-20"><h2>Sisa jadi <span style="color:#BFE3FF">Guna.</span></h2>
       <p>Marketplace B2B yang menyalurkan limbah perikanan, batik, kawasan industri, dan pertanian di Batang–Pekalongan ke pendaur ulang terverifikasi.</p>
       <div class="row wrap gap-8">${[['Perikanan', 'fish'], ['Batik', 'batik'], ['Kawasan Industri', 'factory'], ['Pertanian', 'leaf']].map(([l, i]) => `<span class="auth-chip">${I(i)}${l}</span>`).join('')}</div></div>
     <div class="auth-stats"><div><b>1.240 ton</b><small>limbah tersalurkan</small></div><div><b>380+</b><small>mitra terverifikasi</small></div><div><b>4 sektor</b><small>industri lokal</small></div></div>
@@ -150,7 +150,7 @@ V.landing = () => `
 <header class="l-hero" id="top">
   <div class="col gap-24" style="max-width:600px">
     <span class="auth-chip" style="align-self:flex-start">${I('pin')}Khusus Batang–Pekalongan</span>
-    <h1>Limbahmu,<br>bahan baku tetangga.</h1>
+    <h1>Sisa jadi<br><span style="color:#BFE3FF">Guna.</span></h1>
     <p>Marketplace B2B daur ulang limbah industri. Salurkan limbah perikanan, batik, pabrik, dan pertanian ke pendaur ulang terverifikasi — cepat, legal, dan terlacak.</p>
     <div class="row"><button class="btn btn-white" data-go="#/masuk">${I('recycle')}Mulai Salurkan Limbah</button><button class="btn btn-ghost-white" data-go="#/masuk">Jelajahi Limbah</button></div>
     <div class="row gap-24" style="gap:40px">${[['1.240 ton', 'limbah tersalurkan'], ['380+', 'mitra terverifikasi'], ['Rp2,1 M', 'nilai transaksi']].map(([v, k]) => `<div><div style="font-size:26px;font-weight:800">${v}</div><div class="t-md b6" style="color:var(--primary-light)">${k}</div></div>`).join('')}</div>
